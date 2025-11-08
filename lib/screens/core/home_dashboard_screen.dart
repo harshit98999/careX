@@ -1,8 +1,6 @@
 // lib/screens/core/home_dashboard_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 // Import your custom AppBar and the AppDrawer
 import './custom_app_bar.dart';
 import './app_drawer.dart';
@@ -13,7 +11,6 @@ class HomeDashboardScreen
   const HomeDashboardScreen({
     super.key,
   });
-
   @override
   State<
     HomeDashboardScreen
@@ -26,47 +23,35 @@ class _HomeDashboardScreenState
         State<
           HomeDashboardScreen
         > {
-  // Controller to detect scroll position.
   late final ScrollController _scrollController;
-  // State to track if the user has scrolled.
   bool _isScrolled = false;
-
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    // Add a listener to the scroll controller.
     _scrollController.addListener(
       _onScroll,
     );
   }
 
-  // Listener function to update the _isScrolled state.
   void _onScroll() {
-    // We set the state only if the scroll position changes the condition.
-    // A threshold of 10 pixels is used to trigger the change.
     if (_scrollController.offset >
             10 &&
         !_isScrolled) {
       setState(
-        () {
-          _isScrolled = true;
-        },
+        () => _isScrolled = true,
       );
     } else if (_scrollController.offset <=
             10 &&
         _isScrolled) {
       setState(
-        () {
-          _isScrolled = false;
-        },
+        () => _isScrolled = false,
       );
     }
   }
 
   @override
   void dispose() {
-    // Always dispose of controllers to prevent memory leaks.
     _scrollController.removeListener(
       _onScroll,
     );
@@ -74,26 +59,78 @@ class _HomeDashboardScreenState
     super.dispose();
   }
 
+  // --- NEW: A dialog to give the user a choice for the "Labs" category ---
+  void _showLabsOptionsDialog(
+    BuildContext context,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (
+            BuildContext dialogContext,
+          ) {
+            return AlertDialog(
+              title: const Text(
+                "Lab Services",
+              ),
+              content: const Text(
+                "What would you like to do?",
+              ),
+              actions:
+                  <
+                    Widget
+                  >[
+                    TextButton(
+                      child: const Text(
+                        "View Results",
+                      ),
+                      onPressed: () {
+                        Navigator.of(
+                          dialogContext,
+                        ).pop(); // Close the dialog
+                        Navigator.pushNamed(
+                          context,
+                          '/lab-results',
+                        );
+                      },
+                    ),
+                    ElevatedButton(
+                      child: const Text(
+                        "Book a Test",
+                      ),
+                      onPressed: () {
+                        Navigator.of(
+                          dialogContext,
+                        ).pop(); // Close the dialog
+                        Navigator.pushNamed(
+                          context,
+                          '/book_lab_test',
+                        );
+                      },
+                    ),
+                  ],
+            );
+          },
+    );
+  }
+
   @override
   Widget build(
     BuildContext context,
   ) {
     return Scaffold(
-      // Use the custom AppBar, passing the scroll state.
-      // When _isScrolled is false: white background, purple text.
-      // When _isScrolled is true: purple background, white text.
       appBar: CustomAppBar(
         isScrolled: _isScrolled,
       ),
-
-      // The drawer is still available and will be opened by the CustomAppBar.
       drawer: const AppDrawer(),
       body: SingleChildScrollView(
-        // Attach the scroll controller to the scrollable view.
         controller: _scrollController,
         child: Padding(
-          padding: const EdgeInsets.all(
-            16.0,
+          padding: const EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            40,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +145,7 @@ class _HomeDashboardScreenState
               const SizedBox(
                 height: 16,
               ),
-              _buildCategoryGrid(),
+              _buildCategoryGrid(), // <-- All category cards are now functional
               const SizedBox(
                 height: 24,
               ),
@@ -118,7 +155,12 @@ class _HomeDashboardScreenState
               const SizedBox(
                 height: 16,
               ),
-              const AppointmentCard(),
+              AppointmentCard(
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/appointments',
+                ),
+              ),
               const SizedBox(
                 height: 24,
               ),
@@ -138,17 +180,25 @@ class _HomeDashboardScreenState
               const SizedBox(
                 height: 16,
               ),
-              const RecentActivityCard(
+              RecentActivityCard(
                 icon: Icons.science_outlined,
                 title: "Lab Result Update",
                 subtitle: "Your blood test results are in.",
                 time: "1h ago",
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/lab-results',
+                ),
               ),
-              const RecentActivityCard(
+              RecentActivityCard(
                 icon: Icons.receipt_long_outlined,
                 title: "New Prescription",
                 subtitle: "Dr. Reed has prescribed a new medication.",
                 time: "3h ago",
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/prescriptions',
+                ),
               ),
               const SizedBox(
                 height: 24,
@@ -159,37 +209,58 @@ class _HomeDashboardScreenState
               const SizedBox(
                 height: 16,
               ),
-              const MedicationReminderCard(
+              MedicationReminderCard(
                 medication: "Metformin",
                 dosage: "500mg",
                 time: "8:00 AM",
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/prescriptions',
+                ),
               ),
               const SizedBox(
                 height: 24,
               ),
               _buildSectionHeader(
                 "Top Doctors",
+                showViewAll: true,
+                onViewAllTap: () => Navigator.pushNamed(
+                  context,
+                  '/find_a_doctor',
+                ),
               ),
               const SizedBox(
                 height: 16,
               ),
-              const DoctorCard(
+              DoctorCard(
                 name: "Dr. Evelyn Reed",
                 specialty: "Cardiologist",
                 rating: 4.9,
                 imagePath: 'assets/images/doctor_1.jpg',
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/find_a_doctor',
+                ),
               ),
-              const DoctorCard(
+              DoctorCard(
                 name: "Dr. Marcus Chen",
                 specialty: "Dermatologist",
                 rating: 4.8,
                 imagePath: 'assets/images/doctor_2.jpg',
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/find_a_doctor',
+                ),
               ),
-              const DoctorCard(
+              DoctorCard(
                 name: "Dr. Lena Petrova",
                 specialty: "Pediatrician",
                 rating: 4.9,
                 imagePath: 'assets/images/doctor_3.jpg',
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/find_a_doctor',
+                ),
               ),
             ],
           ),
@@ -199,20 +270,39 @@ class _HomeDashboardScreenState
   }
 
   Widget _buildSectionHeader(
-    String title,
-  ) {
-    return Text(
-      title,
-      style: GoogleFonts.lato(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Colors.black87,
-      ),
+    String title, {
+    bool showViewAll = false,
+    VoidCallback? onViewAllTap,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.lato(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        if (showViewAll)
+          TextButton(
+            onPressed: onViewAllTap,
+            child: const Text(
+              "View All",
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildSearchBar() {
     return TextField(
+      onTap: () => Navigator.pushNamed(
+        context,
+        '/find_a_doctor',
+      ),
+      readOnly: true,
       decoration: InputDecoration(
         hintText: "Search for doctors, labs...",
         prefixIcon: const Icon(
@@ -227,17 +317,6 @@ class _HomeDashboardScreenState
           ),
           borderSide: BorderSide.none,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            12,
-          ),
-          borderSide: BorderSide(
-            color: Theme.of(
-              context,
-            ).primaryColor,
-            width: 1.5,
-          ),
-        ),
       ),
     );
   }
@@ -249,85 +328,106 @@ class _HomeDashboardScreenState
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16.0,
       crossAxisSpacing: 16.0,
-      children: const [
+      children: [
         CategoryCard(
           icon: Icons.medical_services_outlined,
           label: "Doctors",
+          onTap: () => Navigator.pushNamed(
+            context,
+            '/find_a_doctor',
+          ),
         ),
+        // --- UPDATED NAVIGATION ---
         CategoryCard(
           icon: Icons.local_hospital_outlined,
           label: "Hospitals",
+          onTap: () => Navigator.pushNamed(
+            context,
+            '/hospitals',
+          ),
         ),
         CategoryCard(
           icon: Icons.local_pharmacy_outlined,
           label: "Pharmacy",
+          onTap: () => Navigator.pushNamed(
+            context,
+            '/pharmacy',
+          ),
         ),
         CategoryCard(
           icon: Icons.science_outlined,
           label: "Labs",
+          onTap: () => _showLabsOptionsDialog(
+            context,
+          ),
         ),
       ],
     );
   }
 }
 
-// All other card widgets (CategoryCard, AppointmentCard, etc.)
-// remain unchanged as provided in the initial code.
-// --- PASTE THE REST OF THE WIDGETS HERE ---
+// --- WIDGETS SECTION: All card widgets remain interactive ---
+// (The code for all the card widgets is unchanged from the previous response)
 class CategoryCard
     extends
         StatelessWidget {
   final IconData icon;
   final String label;
-
+  final VoidCallback onTap;
   const CategoryCard({
     super.key,
     required this.icon,
     required this.label,
+    required this.onTap,
   });
-
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          12,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(
-              0.1,
-            ),
-            spreadRadius: 1,
-            blurRadius: 10,
-          ),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(
+        12,
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 32,
-            color: Theme.of(
-              context,
-            ).primaryColor,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(
+            12,
           ),
-          const SizedBox(
-            height: 8,
-          ),
-          Text(
-            label,
-            style: GoogleFonts.lato(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(
+                0.1,
+              ),
+              spreadRadius: 1,
+              blurRadius: 10,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: Theme.of(
+                context,
+              ).primaryColor,
+            ),
+            const SizedBox(
+              height: 8,
+            ),
+            Text(
+              label,
+              style: GoogleFonts.lato(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -336,85 +436,92 @@ class CategoryCard
 class AppointmentCard
     extends
         StatelessWidget {
+  final VoidCallback onTap;
   const AppointmentCard({
     super.key,
+    required this.onTap,
   });
-
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(
         16,
       ),
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).primaryColor,
-        borderRadius: BorderRadius.circular(
+      child: Container(
+        padding: const EdgeInsets.all(
           16,
         ),
-      ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 28,
-            backgroundImage: AssetImage(
-              'assets/images/doctor_2.jpg',
+        decoration: BoxDecoration(
+          color: Theme.of(
+            context,
+          ).primaryColor,
+          borderRadius: BorderRadius.circular(
+            16,
+          ),
+        ),
+        child: Row(
+          children: [
+            const CircleAvatar(
+              radius: 28,
+              backgroundImage: AssetImage(
+                'assets/images/doctor_2.jpg',
+              ),
             ),
-          ),
-          const SizedBox(
-            width: 16,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Dr. Marcus Chen",
-                  style: GoogleFonts.lato(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(
-                  height: 4,
-                ),
-                Text(
-                  "Dermatologist",
-                  style: GoogleFonts.lato(
-                    color: Colors.white.withOpacity(
-                      0.8,
+            const SizedBox(
+              width: 16,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Dr. Marcus Chen",
+                    style: GoogleFonts.lato(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    "Dermatologist",
+                    style: GoogleFonts.lato(
+                      color: Colors.white.withOpacity(
+                        0.8,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(
+                  0.2,
                 ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(
-                0.2,
+                borderRadius: BorderRadius.circular(
+                  10,
+                ),
               ),
-              borderRadius: BorderRadius.circular(
-                10,
+              child: Text(
+                "10:30 AM",
+                style: GoogleFonts.lato(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            child: Text(
-              "10:30 AM",
-              style: GoogleFonts.lato(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -427,95 +534,101 @@ class DoctorCard
   final String specialty;
   final double rating;
   final String imagePath;
-
+  final VoidCallback onTap;
   const DoctorCard({
     super.key,
     required this.name,
     required this.specialty,
     required this.rating,
     required this.imagePath,
+    required this.onTap,
   });
-
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(
-        bottom: 16,
-      ),
-      padding: const EdgeInsets.all(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(
         12,
       ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
+      child: Container(
+        margin: const EdgeInsets.only(
+          bottom: 16,
+        ),
+        padding: const EdgeInsets.all(
           12,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(
-              0.08,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(
+            12,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(
+                0.08,
+              ),
+              spreadRadius: 1,
+              blurRadius: 10,
             ),
-            spreadRadius: 1,
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundImage: AssetImage(
-              imagePath,
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundImage: AssetImage(
+                imagePath,
+              ),
             ),
-          ),
-          const SizedBox(
-            width: 16,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: GoogleFonts.lato(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(
+              width: 16,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: GoogleFonts.lato(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    specialty,
+                    style: GoogleFonts.lato(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                const Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                  size: 18,
                 ),
                 const SizedBox(
-                  height: 4,
+                  width: 4,
                 ),
                 Text(
-                  specialty,
+                  rating.toString(),
                   style: GoogleFonts.lato(
-                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ],
             ),
-          ),
-          Row(
-            children: [
-              const Icon(
-                Icons.star,
-                color: Colors.amber,
-                size: 18,
-              ),
-              const SizedBox(
-                width: 4,
-              ),
-              Text(
-                rating.toString(),
-                style: GoogleFonts.lato(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -527,7 +640,6 @@ class HealthMetricsGrid
   const HealthMetricsGrid({
     super.key,
   });
-
   @override
   Widget build(
     BuildContext context,
@@ -570,7 +682,6 @@ class HealthMetricCard
   final String label;
   final String value;
   final Color color;
-
   const HealthMetricCard({
     super.key,
     required this.icon,
@@ -578,7 +689,6 @@ class HealthMetricCard
     required this.value,
     required this.color,
   });
-
   @override
   Widget build(
     BuildContext context,
@@ -638,91 +748,97 @@ class RecentActivityCard
   final String title;
   final String subtitle;
   final String time;
-
+  final VoidCallback onTap;
   const RecentActivityCard({
     super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.time,
+    required this.onTap,
   });
-
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Container(
-      margin: const EdgeInsets.only(
-        bottom: 12,
-      ),
-      padding: const EdgeInsets.all(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(
         12,
       ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(
+      child: Container(
+        margin: const EdgeInsets.only(
+          bottom: 12,
+        ),
+        padding: const EdgeInsets.all(
           12,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(
-              0.08,
-            ),
-            spreadRadius: 1,
-            blurRadius: 10,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(
+            12,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor:
-                Theme.of(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(
+                0.08,
+              ),
+              spreadRadius: 1,
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor:
+                  Theme.of(
+                    context,
+                  ).primaryColor.withOpacity(
+                    0.1,
+                  ),
+              child: Icon(
+                icon,
+                color: Theme.of(
                   context,
-                ).primaryColor.withOpacity(
-                  0.1,
-                ),
-            child: Icon(
-              icon,
-              color: Theme.of(
-                context,
-              ).primaryColor,
+                ).primaryColor,
+              ),
             ),
-          ),
-          const SizedBox(
-            width: 16,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.lato(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+            const SizedBox(
+              width: 16,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.lato(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(
-                  height: 4,
-                ),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.lato(
-                    color: Colors.grey[600],
+                  const SizedBox(
+                    height: 4,
                   ),
-                ),
-              ],
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.lato(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            time,
-            style: GoogleFonts.lato(
-              color: Colors.grey,
-              fontSize: 12,
+            Text(
+              time,
+              style: GoogleFonts.lato(
+                color: Colors.grey,
+                fontSize: 12,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -734,86 +850,92 @@ class MedicationReminderCard
   final String medication;
   final String dosage;
   final String time;
-
+  final VoidCallback onTap;
   const MedicationReminderCard({
     super.key,
     required this.medication,
     required this.dosage,
     required this.time,
+    required this.onTap,
   });
-
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(
         16,
       ),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(
-          0.1,
-        ),
-        borderRadius: BorderRadius.circular(
+      child: Container(
+        padding: const EdgeInsets.all(
           16,
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.medication_outlined,
-            size: 32,
-            color: Colors.blue,
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(
+            0.1,
           ),
-          const SizedBox(
-            width: 16,
+          borderRadius: BorderRadius.circular(
+            16,
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  medication,
-                  style: GoogleFonts.lato(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade800,
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.medication_outlined,
+              size: 32,
+              color: Colors.blue,
+            ),
+            const SizedBox(
+              width: 16,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    medication,
+                    style: GoogleFonts.lato(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                    ),
                   ),
-                ),
-                const SizedBox(
-                  height: 4,
-                ),
-                Text(
-                  "Dosage: $dosage",
-                  style: GoogleFonts.lato(
-                    color: Colors.blue.shade700,
+                  const SizedBox(
+                    height: 4,
                   ),
+                  Text(
+                    "Dosage: $dosage",
+                    style: GoogleFonts.lato(
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(
+                  0.2,
                 ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(
-                0.2,
+                borderRadius: BorderRadius.circular(
+                  10,
+                ),
               ),
-              borderRadius: BorderRadius.circular(
-                10,
+              child: Text(
+                time,
+                style: GoogleFonts.lato(
+                  color: Colors.blue.shade800,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            child: Text(
-              time,
-              style: GoogleFonts.lato(
-                color: Colors.blue.shade800,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,4 @@
-// lib/widgets/app_drawer.dart
+// lib/screens/core/app_drawer.dart
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,7 +25,6 @@ class AppDrawer
             context: context,
             icon: Icons.home_outlined,
             text: 'Home',
-            // UPDATED: The home route is now '/dashboard'
             routeName: '/dashboard',
           ),
           _buildDrawerItem(
@@ -47,7 +46,6 @@ class AppDrawer
             routeName: '/history',
           ),
           const Divider(),
-          // NEW FEATURES ADDED HERE
           _buildDrawerItem(
             context: context,
             icon: Icons.receipt_long_outlined,
@@ -58,7 +56,7 @@ class AppDrawer
             context: context,
             icon: Icons.science_outlined,
             text: 'Lab Results',
-            routeName: '/lab_results',
+            routeName: '/lab-results',
           ),
           _buildDrawerItem(
             context: context,
@@ -90,9 +88,7 @@ class AppDrawer
               ),
             ),
             onTap: () {
-              // UPDATED: This is the "logout" logic.
-              // It navigates to the splash screen and removes every other screen
-              // from the navigation history, so the user cannot go back.
+              // This correctly clears the navigation stack and returns to the splash screen.
               Navigator.of(
                 context,
               ).pushNamedAndRemoveUntil(
@@ -178,9 +174,9 @@ class AppDrawer
       onTap: () {
         Navigator.of(
           context,
-        ).pop();
+        ).pop(); // Always close the drawer first
         if (!isSelected) {
-          // Use pushReplacementNamed for drawer items to avoid building up a stack of screens.
+          // This replaces the current screen, preventing a back button to the previous one.
           Navigator.of(
             context,
           ).pushReplacementNamed(

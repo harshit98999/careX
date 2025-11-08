@@ -169,8 +169,12 @@ class _OtpVerificationScreenState
 
   @override
   void dispose() {
-    for (var controller in _otpControllers) controller.dispose();
-    for (var node in _focusNodes) node.dispose();
+    for (var controller in _otpControllers) {
+      controller.dispose();
+    }
+    for (var node in _focusNodes) {
+      node.dispose();
+    }
     _controller.dispose();
     super.dispose();
   }

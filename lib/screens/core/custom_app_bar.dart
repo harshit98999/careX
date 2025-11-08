@@ -8,19 +8,19 @@ class CustomAppBar
         StatelessWidget
     implements
         PreferredSizeWidget {
-  // A boolean to determine the style of the AppBar based on scroll position.
   final bool isScrolled;
+  final String? title;
 
   const CustomAppBar({
     super.key,
     required this.isScrolled,
+    this.title,
   });
 
   @override
   Widget build(
     BuildContext context,
   ) {
-    // Define colors based on the scroll state.
     final Color backgroundColor = isScrolled
         ? Theme.of(
             context,
@@ -33,65 +33,150 @@ class CustomAppBar
           ).primaryColor;
 
     return AppBar(
-      // Set the background color dynamically.
       backgroundColor: backgroundColor,
       elevation: isScrolled
           ? 4.0
-          : 0.0, // Add shadow when scrolled.
-      // Use a leading IconButton to open the drawer.
+          : 0.0,
+      scrolledUnderElevation: 0,
       leading: IconButton(
         icon: Icon(
-          Icons.sort, // A common icon for opening a menu/drawer.
+          Icons.sort,
           color: foregroundColor,
           size: 28,
         ),
-        onPressed: () {
-          Scaffold.of(
-            context,
-          ).openDrawer();
-        },
+        onPressed: () => Scaffold.of(
+          context,
+        ).openDrawer(),
       ),
-      // The title is the app name, "CareX".
       title: Text(
-        "CareX",
+        title ??
+            "CareX",
         style: GoogleFonts.lato(
-          // Set the text color dynamically.
           color: foregroundColor,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
       ),
+      centerTitle: true,
       actions: [
-        // Notification Icon
         IconButton(
           icon: Icon(
             Icons.notifications_outlined,
-            // Set the icon color dynamically.
             color: foregroundColor,
             size: 28,
           ),
           onPressed: () {
-            // TODO: Implement notification functionality
+            // Notification functionality can be added here
           },
         ),
-        // User Profile Picture
-        const Padding(
-          padding: EdgeInsets.only(
+        Padding(
+          padding: const EdgeInsets.only(
             right: 16.0,
             left: 8.0,
           ),
-          child: CircleAvatar(
-            radius: 20,
-            backgroundImage: AssetImage(
-              'assets/images/doctor_1.jpg',
-            ),
-          ),
+          child:
+              PopupMenuButton<
+                String
+              >(
+                // --- NEW: Add an offset to position the menu below the avatar ---
+                offset: const Offset(
+                  0,
+                  50,
+                ),
+                // -----------------------------------------------------------------
+                onSelected:
+                    (
+                      String value,
+                    ) {
+                      switch (value) {
+                        case 'profile':
+                          if (ModalRoute.of(
+                                context,
+                              )?.settings.name !=
+                              '/profile') {
+                            Navigator.pushNamed(
+                              context,
+                              '/profile',
+                            );
+                          }
+                          break;
+                        case 'logout':
+                          Navigator.of(
+                            context,
+                          ).pushNamedAndRemoveUntil(
+                            '/splash',
+                            (
+                              route,
+                            ) => false,
+                          );
+                          break;
+                      }
+                    },
+                child: const CircleAvatar(
+                  radius: 20,
+                  backgroundImage: AssetImage(
+                    'assets/images/doctor_1.jpg',
+                  ),
+                ),
+                itemBuilder:
+                    (
+                      BuildContext context,
+                    ) =>
+                        <
+                          PopupMenuEntry<
+                            String
+                          >
+                        >[
+                          PopupMenuItem<
+                            String
+                          >(
+                            value: 'profile',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.person_outline,
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor,
+                                ),
+                                const SizedBox(
+                                  width: 8,
+                                ),
+                                const Text(
+                                  'View Profile',
+                                ),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuDivider(),
+                          PopupMenuItem<
+                            String
+                          >(
+                            value: 'logout',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.logout,
+                                  color: Theme.of(
+                                    context,
+                                  ).primaryColor,
+                                ),
+                                const SizedBox(
+                                  width: 8,
+                                ),
+                                const Text(
+                                  'Logout',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+              ),
         ),
       ],
     );
   }
 
-  // Defines the standard height for the AppBar.
   @override
   Size get preferredSize => const Size.fromHeight(
     kToolbarHeight,
