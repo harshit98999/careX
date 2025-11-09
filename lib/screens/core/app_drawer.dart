@@ -2,6 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
+import '../../services/secure_storage_service.dart'; // To clear tokens on logout
+// To access navigatorKey
 
 class AppDrawer
     extends
@@ -9,6 +13,36 @@ class AppDrawer
   const AppDrawer({
     super.key,
   });
+
+  // --- NEW: Logout Handler ---
+  void _logout(
+    BuildContext context,
+  ) async {
+    // Clear user data from the provider
+    Provider.of<
+          UserProvider
+        >(
+          context,
+          listen: false,
+        )
+        .logout();
+
+    // Clear stored tokens
+    await SecureStorageService().deleteTokens();
+
+    // Navigate to splash/login screen and clear the navigation stack
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(
+      '/splash',
+      (
+        Route<
+          dynamic
+        >
+        route,
+      ) => false,
+    );
+  }
 
   @override
   Widget build(
@@ -20,7 +54,7 @@ class AppDrawer
         children: [
           _buildDrawerHeader(
             context,
-          ),
+          ), // This will now be dynamic
           _buildDrawerItem(
             context: context,
             icon: Icons.home_outlined,
@@ -33,6 +67,7 @@ class AppDrawer
             text: 'Profile',
             routeName: '/profile',
           ),
+          // ... other drawer items
           _buildDrawerItem(
             context: context,
             icon: Icons.calendar_today_outlined,
@@ -87,20 +122,9 @@ class AppDrawer
                 fontSize: 16,
               ),
             ),
-            onTap: () {
-              // This correctly clears the navigation stack and returns to the splash screen.
-              Navigator.of(
-                context,
-              ).pushNamedAndRemoveUntil(
-                '/splash',
-                (
-                  Route<
-                    dynamic
-                  >
-                  route,
-                ) => false,
-              );
-            },
+            onTap: () => _logout(
+              context,
+            ), // Use the new handler
           ),
         ],
       ),
@@ -110,31 +134,64 @@ class AppDrawer
   Widget _buildDrawerHeader(
     BuildContext context,
   ) {
-    return UserAccountsDrawerHeader(
-      accountName: Text(
-        "Mad Ull",
-        style: GoogleFonts.lato(
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
-      ),
-      accountEmail: Text(
-        "mad.ull@example.com",
-        style: GoogleFonts.lato(),
-      ),
-      currentAccountPicture: const CircleAvatar(
-        backgroundImage: AssetImage(
-          'assets/images/doctor_1.jpg',
-        ),
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(
-          context,
-        ).primaryColor,
-      ),
+    // Consume the UserProvider to get user data
+    return Consumer<
+      UserProvider
+    >(
+      builder:
+          (
+            context,
+            userProvider,
+            child,
+          ) {
+            final user = userProvider.user;
+
+            // Use a placeholder if the profile picture URL is null or empty
+            final imageProvider =
+                (user?.profilePicture !=
+                        null &&
+                    user!.profilePicture!.isNotEmpty)
+                ? NetworkImage(
+                    user.profilePicture!,
+                  )
+                : const AssetImage(
+                        'assets/images/default_avatar.png',
+                      )
+                      as ImageProvider;
+
+            return UserAccountsDrawerHeader(
+              accountName: Text(
+                user?.fullName ??
+                    "Guest User", // Display full name
+                style: GoogleFonts.lato(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              accountEmail: Text(
+                user?.email ??
+                    "no-email@example.com", // Display email
+                style: GoogleFonts.lato(),
+              ),
+              currentAccountPicture: CircleAvatar(
+                backgroundImage: imageProvider,
+                onBackgroundImageError:
+                    (
+                      _,
+                      __,
+                    ) {},
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).primaryColor,
+              ),
+            );
+          },
     );
   }
 
+  // ... (_buildDrawerItem method remains unchanged)
   Widget _buildDrawerItem({
     required BuildContext context,
     required IconData icon,

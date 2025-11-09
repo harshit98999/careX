@@ -1,4 +1,4 @@
-// lib/screens/auth/login_screen.dart
+// lib/screens/auth/register_screen.dart
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -7,24 +7,24 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/api_service.dart';
 import 'otp_verification_screen.dart';
 
-class LoginScreen
+class RegisterScreen
     extends
         StatefulWidget {
-  const LoginScreen({
+  const RegisterScreen({
     super.key,
   });
 
   @override
   State<
-    LoginScreen
+    RegisterScreen
   >
-  createState() => _LoginScreenState();
+  createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState
+class _RegisterScreenState
     extends
         State<
-          LoginScreen
+          RegisterScreen
         >
     with
         SingleTickerProviderStateMixin {
@@ -32,11 +32,13 @@ class _LoginScreenState
       GlobalKey<
         FormState
       >();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController(); // --- ADDED ---
-  bool _isLoading = false; // --- ADDED for loading state ---
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isLoading = false;
 
-  // ... (animations code remains the same)
   late AnimationController _controller;
   late Animation<
     double
@@ -77,7 +79,7 @@ class _LoginScreenState
             .animate(
               CurvedAnimation(
                 parent: _controller,
-                curve: Interval(
+                curve: const Interval(
                   0.0,
                   0.6,
                   curve: Curves.easeInOutCubic,
@@ -97,7 +99,7 @@ class _LoginScreenState
             .animate(
               CurvedAnimation(
                 parent: _controller,
-                curve: Interval(
+                curve: const Interval(
                   0.2,
                   0.8,
                   curve: Curves.easeInOutCubic,
@@ -109,8 +111,11 @@ class _LoginScreenState
 
   @override
   void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose(); // --- ADDED ---
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -126,14 +131,16 @@ class _LoginScreenState
       final apiService = ApiService();
 
       try {
-        await apiService.login(
+        await apiService.register(
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
           email: _emailController.text,
           password: _passwordController.text,
         );
 
-        // On success, navigate to OTP screen for login
         if (mounted) {
-          Navigator.push(
+          Navigator.pushReplacement(
+            // Use pushReplacement to avoid stacking auth screens
             context,
             MaterialPageRoute(
               builder:
@@ -141,7 +148,7 @@ class _LoginScreenState
                     context,
                   ) => OtpVerificationScreen(
                     email: _emailController.text,
-                    verificationType: VerificationType.login,
+                    verificationType: VerificationType.registration,
                   ),
             ),
           );
@@ -159,6 +166,7 @@ class _LoginScreenState
                   e,
                 ),
               ),
+              backgroundColor: Colors.redAccent,
             ),
           );
         }
@@ -185,9 +193,8 @@ class _LoginScreenState
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false,
       ),
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: 24.0,
@@ -196,8 +203,9 @@ class _LoginScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(
-              height: 40,
+              height: 20,
             ),
+            // Animated Header
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -206,7 +214,7 @@ class _LoginScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Welcome Back!",
+                      "Create Account",
                       style: GoogleFonts.poppins(
                         fontSize: 34,
                         fontWeight: FontWeight.bold,
@@ -217,7 +225,7 @@ class _LoginScreenState
                       height: 12,
                     ),
                     Text(
-                      'Enter your credentials to continue.',
+                      'Join us by filling out the form below.',
                       style: GoogleFonts.lato(
                         fontSize: 18,
                         color: Colors.black54,
@@ -228,8 +236,10 @@ class _LoginScreenState
               ),
             ),
             const SizedBox(
-              height: 60,
+              height: 40,
             ),
+
+            // Animated Form
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -238,45 +248,27 @@ class _LoginScreenState
                   key: _formKey,
                   child: Column(
                     children: [
-                      // Email Field (Unchanged)
-                      TextFormField(
+                      _buildTextFormField(
+                        controller: _firstNameController,
+                        labelText: 'First Name',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      _buildTextFormField(
+                        controller: _lastNameController,
+                        labelText: 'Last Name',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      _buildTextFormField(
                         controller: _emailController,
+                        labelText: 'Email Address',
+                        icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
-                        style: GoogleFonts.lato(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Email Address',
-                          labelStyle: GoogleFonts.lato(
-                            color: Colors.grey[600],
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.email_outlined,
-                            color: Colors.grey,
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.withOpacity(
-                            0.1,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              12,
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              12,
-                            ),
-                            borderSide: BorderSide(
-                              color: Theme.of(
-                                context,
-                              ).primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                        ),
                         validator:
                             (
                               value,
@@ -299,45 +291,11 @@ class _LoginScreenState
                       const SizedBox(
                         height: 20,
                       ),
-                      // --- ADDED PASSWORD FIELD ---
-                      TextFormField(
+                      _buildTextFormField(
                         controller: _passwordController,
+                        labelText: 'Password',
+                        icon: Icons.lock_outline,
                         obscureText: true,
-                        style: GoogleFonts.lato(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: GoogleFonts.lato(
-                            color: Colors.grey[600],
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.lock_outline,
-                            color: Colors.grey,
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.withOpacity(
-                            0.1,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              12,
-                            ),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(
-                              12,
-                            ),
-                            borderSide: BorderSide(
-                              color: Theme.of(
-                                context,
-                              ).primaryColor,
-                              width: 2,
-                            ),
-                          ),
-                        ),
                         validator:
                             (
                               value,
@@ -345,7 +303,35 @@ class _LoginScreenState
                               if (value ==
                                       null ||
                                   value.isEmpty) {
-                                return 'Please enter your password.';
+                                return 'Please enter a password.';
+                              }
+                              if (value.length <
+                                  8) {
+                                return 'Password must be at least 8 characters long.';
+                              }
+                              return null;
+                            },
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      _buildTextFormField(
+                        controller: _confirmPasswordController,
+                        labelText: 'Confirm Password',
+                        icon: Icons.lock_outline,
+                        obscureText: true,
+                        validator:
+                            (
+                              value,
+                            ) {
+                              if (value ==
+                                      null ||
+                                  value.isEmpty) {
+                                return 'Please confirm your password.';
+                              }
+                              if (value !=
+                                  _passwordController.text) {
+                                return 'Passwords do not match.';
                               }
                               return null;
                             },
@@ -353,6 +339,8 @@ class _LoginScreenState
                       const SizedBox(
                         height: 40,
                       ),
+
+                      // This is the SizedBox you provided, now with its proper parent widgets.
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -378,11 +366,16 @@ class _LoginScreenState
                             ),
                           ),
                           child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
+                              ? const SizedBox(
+                                  height: 24, // Give the indicator a fixed size
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 3,
+                                  ),
                                 )
                               : Text(
-                                  'Login',
+                                  'Create Account',
                                   style: GoogleFonts.poppins(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
@@ -391,26 +384,23 @@ class _LoginScreenState
                         ),
                       ),
                       const SizedBox(
-                        height: 24,
+                        height: 20,
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Don't have an account?",
+                            "Already have an account?",
                             style: GoogleFonts.lato(
                               color: Colors.grey[600],
                             ),
                           ),
                           TextButton(
-                            onPressed: () =>
-                                Navigator.of(
-                                  context,
-                                ).pushNamed(
-                                  '/register',
-                                ),
+                            onPressed: () => Navigator.of(
+                              context,
+                            ).pop(),
                             child: Text(
-                              'Sign Up',
+                              'Log In',
                               style: GoogleFonts.lato(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(
@@ -429,6 +419,72 @@ class _LoginScreenState
           ],
         ),
       ),
+    );
+  }
+
+  // Helper widget to reduce code duplication for TextFormFields
+  Widget _buildTextFormField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+    bool obscureText = false,
+    String? Function(
+      String?,
+    )?
+    validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: GoogleFonts.lato(
+        fontSize: 16,
+        color: Colors.black87,
+      ),
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: GoogleFonts.lato(
+          color: Colors.grey[600],
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: Colors.grey,
+        ),
+        filled: true,
+        fillColor: Colors.grey.withOpacity(
+          0.1,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+            12,
+          ),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(
+            12,
+          ),
+          borderSide: BorderSide(
+            color: Theme.of(
+              context,
+            ).primaryColor,
+            width: 2,
+          ),
+        ),
+      ),
+      validator:
+          validator ??
+          (
+            value,
+          ) {
+            if (value ==
+                    null ||
+                value.trim().isEmpty) {
+              return 'This field cannot be empty.';
+            }
+            return null;
+          },
     );
   }
 }

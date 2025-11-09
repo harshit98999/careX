@@ -1,5 +1,10 @@
+// lib/screens/auth/splash_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
+import '../../services/secure_storage_service.dart';
 
 class SplashScreen
     extends
@@ -50,23 +55,19 @@ class _SplashScreenState
   void initState() {
     super.initState();
 
-    // Controller for the main content animations
+    // --- All your original animation setup remains unchanged ---
     _controller = AnimationController(
       duration: const Duration(
         milliseconds: 1200,
       ),
       vsync: this,
     );
-
-    // Controller for the background image animation
     _backgroundController = AnimationController(
       duration: const Duration(
         seconds: 15,
       ),
       vsync: this,
     );
-
-    // General fade animation
     _fadeAnimation =
         Tween<
               double
@@ -80,8 +81,6 @@ class _SplashScreenState
                 curve: Curves.easeIn,
               ),
             );
-
-    // Background scale animation
     _scaleAnimation =
         Tween<
               double
@@ -95,8 +94,6 @@ class _SplashScreenState
                 curve: Curves.easeInOut,
               ),
             );
-
-    // Staggered slide animations
     _slideAnimationTitle = _createSlideAnimation(
       begin: 0.0,
       end: 0.6,
@@ -110,9 +107,57 @@ class _SplashScreenState
       end: 1.0,
     );
 
-    // Start the animations
     _controller.forward();
     _backgroundController.forward();
+
+    // --- NEW: Start the authentication check in the background ---
+    _checkAuthAndNavigate();
+  }
+
+  /// --- NEW: This is the only new logic added to this file ---
+  /// Checks for a stored token and navigates to the dashboard if the user
+  /// is already logged in. Otherwise, it does nothing, allowing the user
+  /// to press "Get Started".
+  Future<
+    void
+  >
+  _checkAuthAndNavigate() async {
+    final storage = SecureStorageService();
+    final refreshToken = await storage.getRefreshToken();
+
+    // If no token, the user is not logged in. Do nothing.
+    if (refreshToken ==
+        null) {
+      return;
+    }
+
+    // If a token exists, try to fetch the user profile to validate it.
+    try {
+      if (mounted) {
+        await Provider.of<
+              UserProvider
+            >(
+              context,
+              listen: false,
+            )
+            .fetchAndSetUser();
+
+        // If successful, navigate directly to the dashboard.
+        // The `pushReplacementNamed` prevents the user from going back to the splash screen.
+        Navigator.of(
+          context,
+        ).pushReplacementNamed(
+          '/dashboard',
+        );
+      }
+    } catch (
+      e
+    ) {
+      // If fetching fails, the token is invalid. Do nothing and let the user log in manually.
+      print(
+        "Auto-login with stored token failed: $e",
+      );
+    }
   }
 
   Animation<
@@ -150,15 +195,17 @@ class _SplashScreenState
     super.dispose();
   }
 
+  // --- This function is unchanged. It's the path for new users. ---
   void _onGetStarted() {
     // Reverse the animations and navigate after they complete
     _controller.reverse().then(
       (
         _,
       ) {
+        // Use pushReplacementNamed to prevent going back to the splash screen.
         Navigator.of(
           context,
-        ).pushNamed(
+        ).pushReplacementNamed(
           '/login',
         );
       },
@@ -169,11 +216,11 @@ class _SplashScreenState
   Widget build(
     BuildContext context,
   ) {
+    // --- YOUR ENTIRE UI IS UNCHANGED. ---
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Animated Background Image
           ScaleTransition(
             scale: _scaleAnimation,
             child: Image.asset(
@@ -185,8 +232,6 @@ class _SplashScreenState
               colorBlendMode: BlendMode.darken,
             ),
           ),
-
-          // Gradient Overlay
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -209,8 +254,6 @@ class _SplashScreenState
               ),
             ),
           ),
-
-          // Animated Content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -221,7 +264,6 @@ class _SplashScreenState
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // App Title
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: SlideTransition(
@@ -240,8 +282,6 @@ class _SplashScreenState
                   const SizedBox(
                     height: 16,
                   ),
-
-                  // Tagline
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: SlideTransition(
@@ -262,8 +302,6 @@ class _SplashScreenState
                   const SizedBox(
                     height: 48,
                   ),
-
-                  // "Get Started" Button
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: SlideTransition(

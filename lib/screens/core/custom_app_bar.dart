@@ -2,6 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
+import '../../services/secure_storage_service.dart';
 
 class CustomAppBar
     extends
@@ -17,6 +20,31 @@ class CustomAppBar
     this.title,
   });
 
+  void _logout(
+    BuildContext context,
+  ) async {
+    // Clear user data from the provider
+    Provider.of<
+          UserProvider
+        >(
+          context,
+          listen: false,
+        )
+        .logout();
+    // Clear stored tokens
+    await SecureStorageService().deleteTokens();
+    // Navigate and clear the stack
+    Navigator.of(
+      context,
+      rootNavigator: true,
+    ).pushNamedAndRemoveUntil(
+      '/splash',
+      (
+        route,
+      ) => false,
+    );
+  }
+
   @override
   Widget build(
     BuildContext context,
@@ -31,6 +59,27 @@ class CustomAppBar
         : Theme.of(
             context,
           ).primaryColor;
+
+    // Consume the provider to get user data for the avatar
+    final user =
+        Provider.of<
+              UserProvider
+            >(
+              context,
+              listen: false,
+            )
+            .user;
+    final imageProvider =
+        (user?.profilePicture !=
+                null &&
+            user!.profilePicture!.isNotEmpty)
+        ? NetworkImage(
+            user.profilePicture!,
+          )
+        : const AssetImage(
+                'assets/images/default_avatar.png',
+              )
+              as ImageProvider;
 
     return AppBar(
       backgroundColor: backgroundColor,
@@ -65,9 +114,7 @@ class CustomAppBar
             color: foregroundColor,
             size: 28,
           ),
-          onPressed: () {
-            // Notification functionality can be added here
-          },
+          onPressed: () {},
         ),
         Padding(
           padding: const EdgeInsets.only(
@@ -78,12 +125,10 @@ class CustomAppBar
               PopupMenuButton<
                 String
               >(
-                // --- NEW: Add an offset to position the menu below the avatar ---
                 offset: const Offset(
                   0,
                   50,
                 ),
-                // -----------------------------------------------------------------
                 onSelected:
                     (
                       String value,
@@ -101,22 +146,20 @@ class CustomAppBar
                           }
                           break;
                         case 'logout':
-                          Navigator.of(
+                          _logout(
                             context,
-                          ).pushNamedAndRemoveUntil(
-                            '/splash',
-                            (
-                              route,
-                            ) => false,
                           );
                           break;
                       }
                     },
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 20,
-                  backgroundImage: AssetImage(
-                    'assets/images/doctor_1.jpg',
-                  ),
+                  backgroundImage: imageProvider, // Use dynamic image
+                  onBackgroundImageError:
+                      (
+                        _,
+                        __,
+                      ) {},
                 ),
                 itemBuilder:
                     (

@@ -1,4 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ADD THESE TWO PERMISSIONS HERE -->
+    <!-- Allows the app to access the internet for API calls -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Allows the app to read images from the device's gallery (for Android 13+) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- For older Android versions (API 32 and below), you might need:
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    -->
+
     <application
         android:label="careX"
         android:name="${applicationName}"

@@ -1,9 +1,14 @@
 // lib/screens/core/home_dashboard_screen.dart
+
 import 'package:flutter/material.dart';
+// Required for SystemNavigator
 import 'package:google_fonts/google_fonts.dart';
 // Import your custom AppBar and the AppDrawer
 import './custom_app_bar.dart';
 import './app_drawer.dart';
+
+// Assume other widgets like AppointmentCard, HealthMetricsGrid, etc., are in separate files or below
+// For brevity, their code is omitted here but is unchanged from your original file.
 
 class HomeDashboardScreen
     extends
@@ -59,7 +64,6 @@ class _HomeDashboardScreenState
     super.dispose();
   }
 
-  // --- NEW: A dialog to give the user a choice for the "Labs" category ---
   void _showLabsOptionsDialog(
     BuildContext context,
   ) {
@@ -114,161 +118,227 @@ class _HomeDashboardScreenState
     );
   }
 
+  // --- NEW: Confirmation Dialog for Exiting the App ---
+  Future<
+    bool
+  >
+  _onWillPop() async {
+    final shouldPop =
+        await showDialog<
+          bool
+        >(
+          context: context,
+          builder:
+              (
+                context,
+              ) {
+                return AlertDialog(
+                  title: const Text(
+                    'Exit Application',
+                  ),
+                  content: const Text(
+                    'Are you sure you want to close the app?',
+                  ),
+                  actions:
+                      <
+                        Widget
+                      >[
+                        TextButton(
+                          child: const Text(
+                            'No',
+                          ),
+                          onPressed: () {
+                            // This returns `false` to the `showDialog` future.
+                            Navigator.of(
+                              context,
+                            ).pop(
+                              false,
+                            );
+                          },
+                        ),
+                        TextButton(
+                          child: const Text(
+                            'Yes',
+                          ),
+                          onPressed: () {
+                            // This returns `true` to the `showDialog` future.
+                            Navigator.of(
+                              context,
+                            ).pop(
+                              true,
+                            );
+                          },
+                        ),
+                      ],
+                );
+              },
+        );
+    // If the dialog is dismissed (e.g., by tapping outside), `shouldPop` will be null.
+    // `?? false` ensures we don't pop the route in that case.
+    return shouldPop ??
+        false;
+  }
+
   @override
   Widget build(
     BuildContext context,
   ) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        isScrolled: _isScrolled,
-      ),
-      drawer: const AppDrawer(),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            40,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSearchBar(),
-              const SizedBox(
-                height: 24,
-              ),
-              _buildSectionHeader(
-                "Categories",
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              _buildCategoryGrid(), // <-- All category cards are now functional
-              const SizedBox(
-                height: 24,
-              ),
-              _buildSectionHeader(
-                "Upcoming Appointment",
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              AppointmentCard(
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/appointments',
+    // --- WRAP SCAFFOLD WITH WILLPOPSCOPE ---
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
+        appBar: CustomAppBar(
+          isScrolled: _isScrolled,
+        ),
+        drawer: const AppDrawer(),
+        body: SingleChildScrollView(
+          controller: _scrollController,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              40,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSearchBar(),
+                const SizedBox(
+                  height: 24,
                 ),
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              _buildSectionHeader(
-                "Health Metrics",
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              const HealthMetricsGrid(),
-              const SizedBox(
-                height: 24,
-              ),
-              _buildSectionHeader(
-                "Recent Activity",
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              RecentActivityCard(
-                icon: Icons.science_outlined,
-                title: "Lab Result Update",
-                subtitle: "Your blood test results are in.",
-                time: "1h ago",
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/lab-results',
+                _buildSectionHeader(
+                  "Categories",
                 ),
-              ),
-              RecentActivityCard(
-                icon: Icons.receipt_long_outlined,
-                title: "New Prescription",
-                subtitle: "Dr. Reed has prescribed a new medication.",
-                time: "3h ago",
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/prescriptions',
+                const SizedBox(
+                  height: 16,
                 ),
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              _buildSectionHeader(
-                "Medication Reminders",
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              MedicationReminderCard(
-                medication: "Metformin",
-                dosage: "500mg",
-                time: "8:00 AM",
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/prescriptions',
+                _buildCategoryGrid(),
+                const SizedBox(
+                  height: 24,
                 ),
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              _buildSectionHeader(
-                "Top Doctors",
-                showViewAll: true,
-                onViewAllTap: () => Navigator.pushNamed(
-                  context,
-                  '/find_a_doctor',
+                _buildSectionHeader(
+                  "Upcoming Appointment",
                 ),
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              DoctorCard(
-                name: "Dr. Evelyn Reed",
-                specialty: "Cardiologist",
-                rating: 4.9,
-                imagePath: 'assets/images/doctor_1.jpg',
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/find_a_doctor',
+                const SizedBox(
+                  height: 16,
                 ),
-              ),
-              DoctorCard(
-                name: "Dr. Marcus Chen",
-                specialty: "Dermatologist",
-                rating: 4.8,
-                imagePath: 'assets/images/doctor_2.jpg',
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/find_a_doctor',
+                AppointmentCard(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/appointments',
+                  ),
                 ),
-              ),
-              DoctorCard(
-                name: "Dr. Lena Petrova",
-                specialty: "Pediatrician",
-                rating: 4.9,
-                imagePath: 'assets/images/doctor_3.jpg',
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/find_a_doctor',
+                const SizedBox(
+                  height: 24,
                 ),
-              ),
-            ],
+                _buildSectionHeader(
+                  "Health Metrics",
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                const HealthMetricsGrid(),
+                const SizedBox(
+                  height: 24,
+                ),
+                _buildSectionHeader(
+                  "Recent Activity",
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                RecentActivityCard(
+                  icon: Icons.science_outlined,
+                  title: "Lab Result Update",
+                  subtitle: "Your blood test results are in.",
+                  time: "1h ago",
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/lab-results',
+                  ),
+                ),
+                RecentActivityCard(
+                  icon: Icons.receipt_long_outlined,
+                  title: "New Prescription",
+                  subtitle: "Dr. Reed has prescribed a new medication.",
+                  time: "3h ago",
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/prescriptions',
+                  ),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                _buildSectionHeader(
+                  "Medication Reminders",
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                MedicationReminderCard(
+                  medication: "Metformin",
+                  dosage: "500mg",
+                  time: "8:00 AM",
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/prescriptions',
+                  ),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+                _buildSectionHeader(
+                  "Top Doctors",
+                  showViewAll: true,
+                  onViewAllTap: () => Navigator.pushNamed(
+                    context,
+                    '/find_a_doctor',
+                  ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                DoctorCard(
+                  name: "Dr. Evelyn Reed",
+                  specialty: "Cardiologist",
+                  rating: 4.9,
+                  imagePath: 'assets/images/doctor_1.jpg',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/find_a_doctor',
+                  ),
+                ),
+                DoctorCard(
+                  name: "Dr. Marcus Chen",
+                  specialty: "Dermatologist",
+                  rating: 4.8,
+                  imagePath: 'assets/images/doctor_2.jpg',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/find_a_doctor',
+                  ),
+                ),
+                DoctorCard(
+                  name: "Dr. Lena Petrova",
+                  specialty: "Pediatrician",
+                  rating: 4.9,
+                  imagePath: 'assets/images/doctor_3.jpg',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/find_a_doctor',
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  // --- WIDGET BUILDER METHODS (Unchanged) ---
   Widget _buildSectionHeader(
     String title, {
     bool showViewAll = false,
@@ -337,7 +407,6 @@ class _HomeDashboardScreenState
             '/find_a_doctor',
           ),
         ),
-        // --- UPDATED NAVIGATION ---
         CategoryCard(
           icon: Icons.local_hospital_outlined,
           label: "Hospitals",
@@ -366,8 +435,9 @@ class _HomeDashboardScreenState
   }
 }
 
-// --- WIDGETS SECTION: All card widgets remain interactive ---
-// (The code for all the card widgets is unchanged from the previous response)
+// --- ALL OTHER WIDGETS (CategoryCard, AppointmentCard, etc.) ---
+// These widgets are unchanged. You can keep your existing code for them.
+// ... (The code for all the card widgets remains unchanged from the previous response)
 class CategoryCard
     extends
         StatelessWidget {
