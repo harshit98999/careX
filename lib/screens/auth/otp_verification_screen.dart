@@ -4,8 +4,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; // Import provider
-import '../../providers/user_provider.dart'; // Import UserProvider
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/secure_storage_service.dart';
 
@@ -40,12 +40,10 @@ class _OtpVerificationScreenState
         >
     with
         SingleTickerProviderStateMixin {
-  // ... (all state variables and animations remain the same)
   final _formKey =
       GlobalKey<
         FormState
       >();
-  // FIX: Renamed to match usage in initState/dispose
   final List<
     TextEditingController
   >
@@ -186,14 +184,12 @@ class _OtpVerificationScreenState
               ),
             );
 
-    // Set up listeners to auto-focus next field
     for (
       int i = 0;
       i <
           5;
       i++
     ) {
-      // FIX: Using the corrected variable name _otpControllers and _focusNodes
       _otpControllers[i].addListener(
         () {
           if (_otpControllers[i].text.length ==
@@ -215,7 +211,6 @@ class _OtpVerificationScreenState
 
   @override
   void dispose() {
-    // FIX: Using the corrected variable name _otpControllers and _focusNodes
     for (var controller in _otpControllers) {
       controller.dispose();
     }
@@ -226,7 +221,7 @@ class _OtpVerificationScreenState
     super.dispose();
   }
 
-  // --- HEAVILY UPDATED METHOD ---
+  // --- MODIFIED METHOD: Now handles role-based navigation ---
   Future<
     void
   >
@@ -263,21 +258,19 @@ class _OtpVerificationScreenState
     try {
       if (widget.verificationType ==
           VerificationType.login) {
-        // Step 1: Verify OTP and get tokens
         final response = await _apiService.verifyLoginOtp(
           email: widget.email,
           otp: otp,
         );
         final accessToken = response.data['access'];
         final refreshToken = response.data['refresh'];
+        final String role = response.data['role']; // Get role from API response
 
-        // Step 2: Save tokens
         await _storageService.saveTokens(
           accessToken: accessToken,
           refreshToken: refreshToken,
         );
 
-        // --- NEW: Step 3: Fetch and set user data using the provider ---
         if (mounted) {
           await Provider.of<
                 UserProvider
@@ -288,12 +281,18 @@ class _OtpVerificationScreenState
               .fetchAndSetUser();
         }
 
-        // Step 4: Navigate to dashboard
+        // --- NEW: Role-based navigation logic ---
         if (mounted) {
+          final targetRoute =
+              (role ==
+                  'DOCTOR')
+              ? '/doctor-dashboard'
+              : '/dashboard';
+
           Navigator.of(
             context,
           ).pushNamedAndRemoveUntil(
-            '/dashboard',
+            targetRoute,
             (
               route,
             ) => false,
@@ -352,7 +351,6 @@ class _OtpVerificationScreenState
     }
   }
 
-  // ... (_resendOtp and build methods remain the same)
   Future<
     void
   >
@@ -412,7 +410,6 @@ class _OtpVerificationScreenState
   Widget build(
     BuildContext context,
   ) {
-    // FIX: Reconstructed the full build method
     return Scaffold(
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(

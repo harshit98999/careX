@@ -1,6 +1,6 @@
 // lib/services/api_service.dart
 
-import 'dart:io'; // Required for File and path operations
+// Required for File and path operations
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -156,6 +156,15 @@ class ApiService {
     );
   }
 
+  // --- NEW: Public method to clear auth tokens ---
+  /// Deletes the stored access and refresh tokens.
+  Future<
+    void
+  >
+  clearAuthToken() async {
+    await _storageService.deleteTokens();
+  }
+
   // --- AUTH ENDPOINTS ---
 
   Future<
@@ -166,6 +175,7 @@ class ApiService {
     required String lastName,
     required String email,
     required String password,
+    required String role,
   }) {
     return _dio.post(
       'accounts/register/',
@@ -175,6 +185,7 @@ class ApiService {
         "email": email,
         "password": password,
         "password2": password,
+        "role": role,
       },
     );
   }
@@ -225,20 +236,33 @@ class ApiService {
     );
   }
 
+  // --- MODIFIED: Added logging for the login-verify response ---
   Future<
     Response
   >
   verifyLoginOtp({
     required String email,
     required String otp,
-  }) {
-    return _dio.post(
-      'accounts/login-verify/',
-      data: {
-        "email": email,
-        "otp": otp,
-      },
-    );
+  }) async {
+    try {
+      final response = await _dio.post(
+        'accounts/login-verify/',
+        data: {
+          "email": email,
+          "otp": otp,
+        },
+      );
+      // --- ADDED: Print the full response data to the debug console ---
+      print(
+        'Login Verify API Response: ${response.data}',
+      );
+      return response;
+    } catch (
+      e
+    ) {
+      // The existing onError interceptor will still handle and log errors.
+      rethrow;
+    }
   }
 
   Future<

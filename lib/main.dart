@@ -7,96 +7,70 @@ import 'package:provider/provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/user_provider.dart';
 
-// Import all services
-import 'services/api_service.dart';
-import 'services/secure_storage_service.dart';
+// --- Import the new AuthWrapper ---
+import 'screens/core/auth_wrapper.dart';
 
-// Import all screen routes
-import 'screens/auth/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
-import 'screens/core/home_dashboard_screen.dart';
+import 'screens/auth/splash_screen.dart';
 import 'screens/profile_screen.dart';
 
-/// The main entry point of the application.
-/// It is `async` to allow for pre-run checks.
+// Import all your other existing screens to register their routes
+import 'screens/hospitals_screen.dart';
+import 'screens/find_a_doctor_screen.dart';
+import 'screens/pharmacy_screen.dart';
+import 'screens/appointments_screen.dart';
+import 'screens/lab_results_screen.dart';
+import 'screens/prescriptions_screen.dart';
+import 'screens/book_lab_test_screen.dart';
+
+// A global navigator key is useful for service-level navigation.
+final GlobalKey<
+  NavigatorState
+>
+navigatorKey =
+    GlobalKey<
+      NavigatorState
+    >();
+
 void
 main() async {
-  // Step 1: Ensure Flutter's widget binding is initialized.
-  // This is mandatory before using any plugins or async operations before runApp().
+  // --- MODIFIED: No changes here, but confirming it's correct ---
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Step 2: Determine the initial route based on authentication status.
-  final secureStorage = SecureStorageService();
-  final userProvider = UserProvider();
-  String initialRoute = '/splash'; // Default to splash for new users
-
-  // Check if a refresh token exists in secure storage.
-  final refreshToken = await secureStorage.getRefreshToken();
-
-  // If a token exists, try to use it to fetch the user's profile.
-  if (refreshToken !=
-      null) {
-    try {
-      // Pre-load the user data into the UserProvider instance.
-      await userProvider.fetchAndSetUser();
-      // If successful, the user is authenticated. Set the starting screen to the dashboard.
-      initialRoute = '/dashboard';
-    } catch (
-      e
-    ) {
-      // If fetching fails, the token is likely invalid or expired.
-      print(
-        "Pre-run authentication check failed: $e",
-      );
-      // Clear the invalid token to prevent future errors.
-      await secureStorage.deleteTokens();
-      // Keep the initial route as '/splash' to force a new login.
-      initialRoute = '/splash';
-    }
-  }
-
-  // Step 3: Run the Flutter app.
+  // We no longer need to call tryAutoLogin here, as the SplashScreen will handle it.
   runApp(
     MultiProvider(
       providers: [
-        // Provider for theme (light/dark mode)
         ChangeNotifierProvider(
           create:
               (
                 _,
               ) => ThemeProvider(),
         ),
-        // Provider for user data. Use .value since we created the instance above.
-        ChangeNotifierProvider.value(
-          value: userProvider,
+        // --- MODIFIED: Initialize UserProvider directly ---
+        ChangeNotifierProvider(
+          create:
+              (
+                _,
+              ) => UserProvider(),
         ),
       ],
-      // Pass the determined initialRoute to the MyApp widget.
-      child: MyApp(
-        initialRoute: initialRoute,
-      ),
+      child: const MyApp(),
     ),
   );
 }
 
-/// The root widget of the application.
 class MyApp
     extends
         StatelessWidget {
-  /// The initial route the app should start on ('/splash' or '/dashboard').
-  final String initialRoute;
-
   const MyApp({
     super.key,
-    required this.initialRoute,
   });
 
   @override
   Widget build(
     BuildContext context,
   ) {
-    // Access the ThemeProvider to set the app's theme mode.
     final themeProvider =
         Provider.of<
           ThemeProvider
@@ -105,13 +79,10 @@ class MyApp
         );
 
     return MaterialApp(
-      // The global navigator key is essential for service-level navigation (e.g., auto-logout).
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'CareX',
       themeMode: themeProvider.themeMode,
-
-      // --- Define Light Theme ---
       theme: ThemeData(
         brightness: Brightness.light,
         primaryColor: const Color(
@@ -134,8 +105,6 @@ class MyApp
           ),
         ),
       ),
-
-      // --- Define Dark Theme ---
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: const Color(
@@ -153,13 +122,9 @@ class MyApp
               secondary: Colors.amberAccent,
             ),
       ),
-
-      // Use the initial route determined in the main() function.
-      initialRoute: initialRoute,
-
-      // Define all possible navigation routes for the app.
+      initialRoute: '/splash',
       routes: {
-        // Authentication Flow
+        // Auth Flow
         '/splash':
             (
               context,
@@ -173,19 +138,51 @@ class MyApp
               context,
             ) => const RegisterScreen(),
 
-        // Core App Screens
-        '/dashboard':
+        // --- CORE CHANGE ---
+        // Create a single, central route for authenticated users.
+        // The AuthWrapper will decide which dashboard to show.
+        '/':
             (
               context,
-            ) => const HomeDashboardScreen(),
+            ) => const AuthWrapper(),
+
+        // --- DEPRECATED: Remove the old direct dashboard routes ---
+        // '/dashboard': (context) => const HomeDashboardScreen(),
+        // '/doctor-dashboard': (context) => const DoctorDashboardScreen(),
+
+        // Your other routes remain unchanged
         '/profile':
             (
               context,
             ) => const ProfileScreen(),
-
-        // You can add all other routes here as your app grows
-        // '/appointments': (context) => const AppointmentsScreen(),
-        // '/settings': (context) => const SettingsScreen(),
+        '/hospitals':
+            (
+              context,
+            ) => const HospitalsScreen(),
+        '/find_a_doctor':
+            (
+              context,
+            ) => const FindADoctorScreen(),
+        '/pharmacy':
+            (
+              context,
+            ) => const PharmacyScreen(),
+        '/appointments':
+            (
+              context,
+            ) => const AppointmentsScreen(),
+        '/lab-results':
+            (
+              context,
+            ) => const LabResultsScreen(),
+        '/prescriptions':
+            (
+              context,
+            ) => const PrescriptionsScreen(),
+        '/book_lab_test':
+            (
+              context,
+            ) => const BookLabTestScreen(),
       },
     );
   }

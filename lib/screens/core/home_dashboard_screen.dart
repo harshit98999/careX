@@ -1,14 +1,11 @@
 // lib/screens/core/home_dashboard_screen.dart
 
 import 'package:flutter/material.dart';
-// Required for SystemNavigator
 import 'package:google_fonts/google_fonts.dart';
-// Import your custom AppBar and the AppDrawer
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import './custom_app_bar.dart';
 import './app_drawer.dart';
-
-// Assume other widgets like AppointmentCard, HealthMetricsGrid, etc., are in separate files or below
-// For brevity, their code is omitted here but is unchanged from your original file.
 
 class HomeDashboardScreen
     extends
@@ -30,6 +27,7 @@ class _HomeDashboardScreenState
         > {
   late final ScrollController _scrollController;
   bool _isScrolled = false;
+
   @override
   void initState() {
     super.initState();
@@ -91,7 +89,7 @@ class _HomeDashboardScreenState
                       onPressed: () {
                         Navigator.of(
                           dialogContext,
-                        ).pop(); // Close the dialog
+                        ).pop();
                         Navigator.pushNamed(
                           context,
                           '/lab-results',
@@ -105,7 +103,7 @@ class _HomeDashboardScreenState
                       onPressed: () {
                         Navigator.of(
                           dialogContext,
-                        ).pop(); // Close the dialog
+                        ).pop();
                         Navigator.pushNamed(
                           context,
                           '/book_lab_test',
@@ -118,7 +116,6 @@ class _HomeDashboardScreenState
     );
   }
 
-  // --- NEW: Confirmation Dialog for Exiting the App ---
   Future<
     bool
   >
@@ -147,34 +144,28 @@ class _HomeDashboardScreenState
                           child: const Text(
                             'No',
                           ),
-                          onPressed: () {
-                            // This returns `false` to the `showDialog` future.
-                            Navigator.of(
-                              context,
-                            ).pop(
-                              false,
-                            );
-                          },
+                          onPressed: () =>
+                              Navigator.of(
+                                context,
+                              ).pop(
+                                false,
+                              ),
                         ),
                         TextButton(
                           child: const Text(
                             'Yes',
                           ),
-                          onPressed: () {
-                            // This returns `true` to the `showDialog` future.
-                            Navigator.of(
-                              context,
-                            ).pop(
-                              true,
-                            );
-                          },
+                          onPressed: () =>
+                              Navigator.of(
+                                context,
+                              ).pop(
+                                true,
+                              ),
                         ),
                       ],
                 );
               },
         );
-    // If the dialog is dismissed (e.g., by tapping outside), `shouldPop` will be null.
-    // `?? false` ensures we don't pop the route in that case.
     return shouldPop ??
         false;
   }
@@ -183,7 +174,16 @@ class _HomeDashboardScreenState
   Widget build(
     BuildContext context,
   ) {
-    // --- WRAP SCAFFOLD WITH WILLPOPSCOPE ---
+    final userName =
+        Provider.of<
+              UserProvider
+            >(
+              context,
+            )
+            .user
+            ?.fullName ??
+        'User';
+
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
@@ -194,140 +194,240 @@ class _HomeDashboardScreenState
         body: SingleChildScrollView(
           controller: _scrollController,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              40,
+            padding: const EdgeInsets.only(
+              bottom: 40.0,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSearchBar(),
-                const SizedBox(
-                  height: 24,
-                ),
-                _buildSectionHeader(
-                  "Categories",
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                _buildCategoryGrid(),
-                const SizedBox(
-                  height: 24,
-                ),
-                _buildSectionHeader(
-                  "Upcoming Appointment",
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                AppointmentCard(
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/appointments',
+                // Dynamic welcome header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    24,
+                  ),
+                  child: Text(
+                    'Hello, $userName!',
+                    style: GoogleFonts.lato(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                const SizedBox(
-                  height: 24,
-                ),
-                _buildSectionHeader(
-                  "Health Metrics",
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                const HealthMetricsGrid(),
-                const SizedBox(
-                  height: 24,
-                ),
-                _buildSectionHeader(
-                  "Recent Activity",
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                RecentActivityCard(
-                  icon: Icons.science_outlined,
-                  title: "Lab Result Update",
-                  subtitle: "Your blood test results are in.",
-                  time: "1h ago",
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/lab-results',
+
+                // Search Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
                   ),
-                ),
-                RecentActivityCard(
-                  icon: Icons.receipt_long_outlined,
-                  title: "New Prescription",
-                  subtitle: "Dr. Reed has prescribed a new medication.",
-                  time: "3h ago",
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/prescriptions',
-                  ),
+                  child: _buildSearchBar(),
                 ),
                 const SizedBox(
                   height: 24,
                 ),
-                _buildSectionHeader(
-                  "Medication Reminders",
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                MedicationReminderCard(
-                  medication: "Metformin",
-                  dosage: "500mg",
-                  time: "8:00 AM",
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/prescriptions',
+
+                // Categories
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
                   ),
-                ),
-                const SizedBox(
-                  height: 24,
-                ),
-                _buildSectionHeader(
-                  "Top Doctors",
-                  showViewAll: true,
-                  onViewAllTap: () => Navigator.pushNamed(
-                    context,
-                    '/find_a_doctor',
+                  child: _buildSectionHeader(
+                    "Categories",
                   ),
                 ),
                 const SizedBox(
                   height: 16,
                 ),
-                DoctorCard(
-                  name: "Dr. Evelyn Reed",
-                  specialty: "Cardiologist",
-                  rating: 4.9,
-                  imagePath: 'assets/images/doctor_1.jpg',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/find_a_doctor',
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: _buildCategoryGrid(),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+
+                // Upcoming Appointment
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: _buildSectionHeader(
+                    "Upcoming Appointment",
                   ),
                 ),
-                DoctorCard(
-                  name: "Dr. Marcus Chen",
-                  specialty: "Dermatologist",
-                  rating: 4.8,
-                  imagePath: 'assets/images/doctor_2.jpg',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/find_a_doctor',
+                const SizedBox(
+                  height: 16,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: AppointmentCard(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/appointments',
+                    ),
                   ),
                 ),
-                DoctorCard(
-                  name: "Dr. Lena Petrova",
-                  specialty: "Pediatrician",
-                  rating: 4.9,
-                  imagePath: 'assets/images/doctor_3.jpg',
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/find_a_doctor',
+                const SizedBox(
+                  height: 24,
+                ),
+
+                // Health Metrics
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: _buildSectionHeader(
+                    "Health Metrics",
+                  ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: HealthMetricsGrid(),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+
+                // Recent Activity
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: _buildSectionHeader(
+                    "Recent Activity",
+                  ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: Column(
+                    children: [
+                      RecentActivityCard(
+                        icon: Icons.science_outlined,
+                        title: "Lab Result Update",
+                        subtitle: "Your blood test results are in.",
+                        time: "1h ago",
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/lab-results',
+                        ),
+                      ),
+                      RecentActivityCard(
+                        icon: Icons.receipt_long_outlined,
+                        title: "New Prescription",
+                        subtitle: "Dr. Reed has prescribed a new medication.",
+                        time: "3h ago",
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/prescriptions',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+
+                // Medication Reminders
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: _buildSectionHeader(
+                    "Medication Reminders",
+                  ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: MedicationReminderCard(
+                    medication: "Metformin",
+                    dosage: "500mg",
+                    time: "8:00 AM",
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/prescriptions',
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  height: 24,
+                ),
+
+                // Top Doctors
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: _buildSectionHeader(
+                    "Top Doctors",
+                    showViewAll: true,
+                    onViewAllTap: () => Navigator.pushNamed(
+                      context,
+                      '/find_a_doctor',
+                    ),
+                  ),
+                ),
+                const SizedBox(
+                  height: 16,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                  ),
+                  child: Column(
+                    children: [
+                      DoctorCard(
+                        name: "Dr. Evelyn Reed",
+                        specialty: "Cardiologist",
+                        rating: 4.9,
+                        imagePath: 'assets/images/doctor_1.jpg',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/find_a_doctor',
+                        ),
+                      ),
+                      DoctorCard(
+                        name: "Dr. Marcus Chen",
+                        specialty: "Dermatologist",
+                        rating: 4.8,
+                        imagePath: 'assets/images/doctor_2.jpg',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/find_a_doctor',
+                        ),
+                      ),
+                      DoctorCard(
+                        name: "Dr. Lena Petrova",
+                        specialty: "Pediatrician",
+                        rating: 4.9,
+                        imagePath: 'assets/images/doctor_3.jpg',
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/find_a_doctor',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -338,7 +438,7 @@ class _HomeDashboardScreenState
     );
   }
 
-  // --- WIDGET BUILDER METHODS (Unchanged) ---
+  // --- WIDGET BUILDER METHODS ---
   Widget _buildSectionHeader(
     String title, {
     bool showViewAll = false,
@@ -352,7 +452,13 @@ class _HomeDashboardScreenState
           style: GoogleFonts.lato(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color:
+                Theme.of(
+                      context,
+                    ).brightness ==
+                    Brightness.dark
+                ? Colors.white
+                : Colors.black87,
           ),
         ),
         if (showViewAll)
@@ -380,7 +486,13 @@ class _HomeDashboardScreenState
           color: Colors.grey,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor:
+            Theme.of(
+                  context,
+                ).brightness ==
+                Brightness.dark
+            ? Colors.grey[800]
+            : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
             12,
@@ -435,9 +547,7 @@ class _HomeDashboardScreenState
   }
 }
 
-// --- ALL OTHER WIDGETS (CategoryCard, AppointmentCard, etc.) ---
-// These widgets are unchanged. You can keep your existing code for them.
-// ... (The code for all the card widgets remains unchanged from the previous response)
+// --- ALL OTHER WIDGETS ---
 class CategoryCard
     extends
         StatelessWidget {
@@ -454,6 +564,11 @@ class CategoryCard
   Widget build(
     BuildContext context,
   ) {
+    bool isDark =
+        Theme.of(
+          context,
+        ).brightness ==
+        Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(
@@ -461,14 +576,18 @@ class CategoryCard
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark
+              ? Colors.grey[850]
+              : Colors.white,
           borderRadius: BorderRadius.circular(
             12,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(
-                0.1,
+              color: Colors.black.withOpacity(
+                isDark
+                    ? 0.1
+                    : 0.05,
               ),
               spreadRadius: 1,
               blurRadius: 10,
@@ -600,10 +719,8 @@ class AppointmentCard
 class DoctorCard
     extends
         StatelessWidget {
-  final String name;
-  final String specialty;
+  final String name, specialty, imagePath;
   final double rating;
-  final String imagePath;
   final VoidCallback onTap;
   const DoctorCard({
     super.key,
@@ -617,6 +734,11 @@ class DoctorCard
   Widget build(
     BuildContext context,
   ) {
+    bool isDark =
+        Theme.of(
+          context,
+        ).brightness ==
+        Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(
@@ -630,17 +752,21 @@ class DoctorCard
           12,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark
+              ? Colors.grey[850]
+              : Colors.white,
           borderRadius: BorderRadius.circular(
             12,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(
-                0.08,
+              color: Colors.black.withOpacity(
+                isDark
+                    ? 0.1
+                    : 0.05,
               ),
               spreadRadius: 1,
-              blurRadius: 10,
+              blurRadius: 8,
             ),
           ],
         ),
@@ -672,7 +798,7 @@ class DoctorCard
                   Text(
                     specialty,
                     style: GoogleFonts.lato(
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
                     ),
                   ),
                 ],
@@ -720,7 +846,7 @@ class HealthMetricsGrid
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16.0,
       crossAxisSpacing: 16.0,
-      childAspectRatio: 0.7,
+      childAspectRatio: 0.75,
       children: const [
         HealthMetricCard(
           icon: Icons.favorite_border,
@@ -749,8 +875,7 @@ class HealthMetricCard
     extends
         StatelessWidget {
   final IconData icon;
-  final String label;
-  final String value;
+  final String label, value;
   final Color color;
   const HealthMetricCard({
     super.key,
@@ -815,9 +940,7 @@ class RecentActivityCard
     extends
         StatelessWidget {
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final String time;
+  final String title, subtitle, time;
   final VoidCallback onTap;
   const RecentActivityCard({
     super.key,
@@ -831,6 +954,11 @@ class RecentActivityCard
   Widget build(
     BuildContext context,
   ) {
+    bool isDark =
+        Theme.of(
+          context,
+        ).brightness ==
+        Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(
@@ -844,17 +972,21 @@ class RecentActivityCard
           12,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark
+              ? Colors.grey[850]
+              : Colors.white,
           borderRadius: BorderRadius.circular(
             12,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(
-                0.08,
+              color: Colors.black.withOpacity(
+                isDark
+                    ? 0.1
+                    : 0.05,
               ),
               spreadRadius: 1,
-              blurRadius: 10,
+              blurRadius: 8,
             ),
           ],
         ),
@@ -894,7 +1026,7 @@ class RecentActivityCard
                   Text(
                     subtitle,
                     style: GoogleFonts.lato(
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
                     ),
                   ),
                 ],
@@ -917,9 +1049,7 @@ class RecentActivityCard
 class MedicationReminderCard
     extends
         StatelessWidget {
-  final String medication;
-  final String dosage;
-  final String time;
+  final String medication, dosage, time;
   final VoidCallback onTap;
   const MedicationReminderCard({
     super.key,
