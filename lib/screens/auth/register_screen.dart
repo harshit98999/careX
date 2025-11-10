@@ -38,6 +38,7 @@ class _RegisterScreenState
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  String _selectedRole = 'CLIENT'; // --- ADDED: Default role is CLIENT
 
   late AnimationController _controller;
   late Animation<
@@ -131,16 +132,17 @@ class _RegisterScreenState
       final apiService = ApiService();
 
       try {
+        // --- MODIFIED: Pass the selected role to the API service ---
         await apiService.register(
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
           email: _emailController.text,
           password: _passwordController.text,
+          role: _selectedRole,
         );
 
         if (mounted) {
           Navigator.pushReplacement(
-            // Use pushReplacement to avoid stacking auth screens
             context,
             MaterialPageRoute(
               builder:
@@ -205,7 +207,6 @@ class _RegisterScreenState
             const SizedBox(
               height: 20,
             ),
-            // Animated Header
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -238,8 +239,6 @@ class _RegisterScreenState
             const SizedBox(
               height: 40,
             ),
-
-            // Animated Form
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -248,6 +247,11 @@ class _RegisterScreenState
                   key: _formKey,
                   child: Column(
                     children: [
+                      // --- ADDED: Role Selector UI ---
+                      _buildRoleSelector(),
+                      const SizedBox(
+                        height: 30,
+                      ),
                       _buildTextFormField(
                         controller: _firstNameController,
                         labelText: 'First Name',
@@ -339,8 +343,6 @@ class _RegisterScreenState
                       const SizedBox(
                         height: 40,
                       ),
-
-                      // This is the SizedBox you provided, now with its proper parent widgets.
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -367,7 +369,7 @@ class _RegisterScreenState
                           ),
                           child: _isLoading
                               ? const SizedBox(
-                                  height: 24, // Give the indicator a fixed size
+                                  height: 24,
                                   width: 24,
                                   child: CircularProgressIndicator(
                                     color: Colors.white,
@@ -422,7 +424,119 @@ class _RegisterScreenState
     );
   }
 
-  // Helper widget to reduce code duplication for TextFormFields
+  // --- ADDED: Helper widget for the role selector ---
+  Widget _buildRoleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "I am a...",
+          style: GoogleFonts.lato(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black54,
+          ),
+        ),
+        const SizedBox(
+          height: 12,
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildRoleOption(
+                label: 'Client',
+                icon: Icons.person_search_outlined,
+                value: 'CLIENT',
+              ),
+            ),
+            const SizedBox(
+              width: 16,
+            ),
+            Expanded(
+              child: _buildRoleOption(
+                label: 'Doctor',
+                icon: Icons.medical_services_outlined,
+                value: 'DOCTOR',
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // --- ADDED: Helper widget for individual role option card ---
+  Widget _buildRoleOption({
+    required String label,
+    required IconData icon,
+    required String value,
+  }) {
+    final bool isSelected =
+        _selectedRole ==
+        value;
+    final Color color = isSelected
+        ? Theme.of(
+            context,
+          ).primaryColor
+        : Colors.grey;
+
+    return GestureDetector(
+      onTap: () {
+        setState(
+          () {
+            _selectedRole = value;
+          },
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(
+          milliseconds: 200,
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: 16,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withOpacity(
+                  0.1,
+                )
+              : Colors.grey.withOpacity(
+                  0.1,
+                ),
+          borderRadius: BorderRadius.circular(
+            12,
+          ),
+          border: Border.all(
+            color: isSelected
+                ? color
+                : Colors.transparent,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: color,
+            ),
+            const SizedBox(
+              height: 8,
+            ),
+            Text(
+              label,
+              style: GoogleFonts.lato(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextFormField({
     required TextEditingController controller,
     required String labelText,
