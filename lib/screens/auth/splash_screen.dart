@@ -6,186 +6,86 @@ import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../services/secure_storage_service.dart';
 
-class SplashScreen
-    extends
-        StatefulWidget {
-  const SplashScreen({
-    super.key,
-  });
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<
-    SplashScreen
-  >
-  createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState
-    extends
-        State<
-          SplashScreen
-        >
-    with
-        TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late AnimationController _backgroundController;
-
-  late Animation<
-    double
-  >
-  _fadeAnimation;
-  late Animation<
-    double
-  >
-  _scaleAnimation;
-  late Animation<
-    Offset
-  >
-  _slideAnimationTitle;
-  late Animation<
-    Offset
-  >
-  _slideAnimationTagline;
-  late Animation<
-    Offset
-  >
-  _slideAnimationButton;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimationTitle;
+  late Animation<Offset> _slideAnimationTagline;
+  late Animation<Offset> _slideAnimationButton;
 
   @override
   void initState() {
     super.initState();
 
-    // --- All your original animation setup remains unchanged ---
     _controller = AnimationController(
-      duration: const Duration(
-        milliseconds: 1200,
-      ),
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     _backgroundController = AnimationController(
-      duration: const Duration(
-        seconds: 15,
-      ),
+      duration: const Duration(seconds: 15),
       vsync: this,
     );
-    _fadeAnimation =
-        Tween<
-              double
-            >(
-              begin: 0.0,
-              end: 1.0,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _controller,
-                curve: Curves.easeIn,
-              ),
-            );
-    _scaleAnimation =
-        Tween<
-              double
-            >(
-              begin: 1.0,
-              end: 1.15,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _backgroundController,
-                curve: Curves.easeInOut,
-              ),
-            );
-    _slideAnimationTitle = _createSlideAnimation(
+    _fadeAnimation = Tween<double>(
       begin: 0.0,
-      end: 0.6,
-    );
-    _slideAnimationTagline = _createSlideAnimation(
-      begin: 0.2,
-      end: 0.8,
-    );
-    _slideAnimationButton = _createSlideAnimation(
-      begin: 0.4,
       end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
+      CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
     );
+    _slideAnimationTitle = _createSlideAnimation(begin: 0.0, end: 0.6);
+    _slideAnimationTagline = _createSlideAnimation(begin: 0.2, end: 0.8);
+    _slideAnimationButton = _createSlideAnimation(begin: 0.4, end: 1.0);
 
     _controller.forward();
     _backgroundController.forward();
 
-    // --- NEW: Start the authentication check in the background ---
     _checkAuthAndNavigate();
   }
 
-  /// --- NEW: This is the only new logic added to this file ---
-  /// Checks for a stored token and navigates to the dashboard if the user
-  /// is already logged in. Otherwise, it does nothing, allowing the user
-  /// to press "Get Started".
-  Future<
-    void
-  >
-  _checkAuthAndNavigate() async {
+  Future<void> _checkAuthAndNavigate() async {
     final storage = SecureStorageService();
     final refreshToken = await storage.getRefreshToken();
 
-    // If no token, the user is not logged in. Do nothing.
-    if (refreshToken ==
-        null) {
-      return;
+    if (refreshToken == null) {
+      return; // No token, do nothing, user will press "Get Started"
     }
 
-    // If a token exists, try to fetch the user profile to validate it.
     try {
       if (mounted) {
-        await Provider.of<
-              UserProvider
-            >(
-              context,
-              listen: false,
-            )
-            .fetchAndSetUser();
-
-        // If successful, navigate directly to the dashboard.
-        // The `pushReplacementNamed` prevents the user from going back to the splash screen.
-        Navigator.of(
+        await Provider.of<UserProvider>(
           context,
-        ).pushReplacementNamed(
-          '/dashboard',
-        );
+          listen: false,
+        ).fetchAndSetUser();
+
+        // --- FIX: Navigate to the root wrapper instead of a specific dashboard ---
+        // AuthWrapper will handle directing the user to the correct screen.
+        Navigator.of(context).pushReplacementNamed('/');
       }
-    } catch (
-      e
-    ) {
-      // If fetching fails, the token is invalid. Do nothing and let the user log in manually.
-      print(
-        "Auto-login with stored token failed: $e",
-      );
+    } catch (e) {
+      print("Auto-login with stored token failed: $e");
     }
   }
 
-  Animation<
-    Offset
-  >
-  _createSlideAnimation({
+  Animation<Offset> _createSlideAnimation({
     required double begin,
     required double end,
   }) {
-    return Tween<
-          Offset
-        >(
-          begin: const Offset(
-            0,
-            0.8,
-          ),
-          end: Offset.zero,
-        )
-        .animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: Interval(
-              begin,
-              end,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
-        );
+    return Tween<Offset>(begin: const Offset(0, 0.8), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(begin, end, curve: Curves.easeOutCubic),
+      ),
+    );
   }
 
   @override
@@ -195,28 +95,14 @@ class _SplashScreenState
     super.dispose();
   }
 
-  // --- This function is unchanged. It's the path for new users. ---
   void _onGetStarted() {
-    // Reverse the animations and navigate after they complete
-    _controller.reverse().then(
-      (
-        _,
-      ) {
-        // Use pushReplacementNamed to prevent going back to the splash screen.
-        Navigator.of(
-          context,
-        ).pushReplacementNamed(
-          '/login',
-        );
-      },
-    );
+    _controller.reverse().then((_) {
+      Navigator.of(context).pushReplacementNamed('/login');
+    });
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    // --- YOUR ENTIRE UI IS UNCHANGED. ---
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -226,9 +112,7 @@ class _SplashScreenState
             child: Image.asset(
               'assets/images/doctor.jpg',
               fit: BoxFit.cover,
-              color: Colors.black.withOpacity(
-                0.3,
-              ),
+              color: Colors.black.withOpacity(0.3),
               colorBlendMode: BlendMode.darken,
             ),
           ),
@@ -236,21 +120,13 @@ class _SplashScreenState
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.black.withOpacity(
-                    0.9,
-                  ),
-                  Colors.black.withOpacity(
-                    0.4,
-                  ),
+                  Colors.black.withOpacity(0.9),
+                  Colors.black.withOpacity(0.4),
                   Colors.transparent,
                 ],
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                stops: const [
-                  0.0,
-                  0.5,
-                  1.0,
-                ],
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
           ),
@@ -279,9 +155,7 @@ class _SplashScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: SlideTransition(
@@ -291,17 +165,13 @@ class _SplashScreenState
                         style: GoogleFonts.lato(
                           fontSize: 28,
                           fontWeight: FontWeight.w400,
-                          color: Colors.white.withOpacity(
-                            0.95,
-                          ),
+                          color: Colors.white.withOpacity(0.95),
                           height: 1.4,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(
-                    height: 48,
-                  ),
+                  const SizedBox(height: 48),
                   FadeTransition(
                     opacity: _fadeAnimation,
                     child: SlideTransition(
@@ -311,22 +181,14 @@ class _SplashScreenState
                         child: ElevatedButton(
                           onPressed: _onGetStarted,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFF6A49E2,
-                            ),
+                            backgroundColor: const Color(0xFF6A49E2),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 20,
-                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 20),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                16,
-                              ),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 8,
-                            shadowColor: Colors.black.withOpacity(
-                              0.4,
-                            ),
+                            shadowColor: Colors.black.withOpacity(0.4),
                           ),
                           child: Text(
                             'Get Started',

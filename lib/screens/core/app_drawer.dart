@@ -2,31 +2,20 @@
 
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for PlatformException
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
-import '../../services/secure_storage_service.dart'; // To clear tokens on logout
+import '../../services/secure_storage_service.dart';
 
-class AppDrawer
-    extends
-        StatefulWidget {
-  const AppDrawer({
-    super.key,
-  });
+class AppDrawer extends StatefulWidget {
+  const AppDrawer({super.key});
 
   @override
-  State<
-    AppDrawer
-  >
-  createState() => _AppDrawerState();
+  State<AppDrawer> createState() => _AppDrawerState();
 }
 
-class _AppDrawerState
-    extends
-        State<
-          AppDrawer
-        > {
+class _AppDrawerState extends State<AppDrawer> {
   String _appVersion = '';
 
   @override
@@ -35,81 +24,65 @@ class _AppDrawerState
     _getAppVersion();
   }
 
-  // --- MODIFIED: Added error handling for the plugin ---
-  Future<
-    void
-  >
-  _getAppVersion() async {
+  Future<void> _getAppVersion() async {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       if (mounted) {
-        setState(
-          () {
-            _appVersion = packageInfo.version;
-          },
-        );
+        setState(() {
+          _appVersion = packageInfo.version;
+        });
       }
     } on PlatformException {
-      // This will catch the MissingPluginException and others.
-      debugPrint(
-        "Failed to get app version, plugin not found.",
-      );
+      debugPrint("Failed to get app version, plugin not found.");
       if (mounted) {
-        setState(
-          () {
-            _appVersion = 'N/A'; // Show a fallback value
-          },
-        );
+        setState(() {
+          _appVersion = 'N/A';
+        });
       }
     }
   }
 
-  void _logout(
-    BuildContext context,
-  ) async {
-    Provider.of<
-          UserProvider
-        >(
-          context,
-          listen: false,
-        )
-        .logout();
+  // --- MODIFIED: Added safety check for the "deactivated widget" error ---
+  void _logout(BuildContext context) async {
+    // Call provider and storage services before any async gaps that use context.
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    userProvider.logout();
     await SecureStorageService().deleteTokens();
+
+    // --- CRITICAL FIX ---
+    // After an `await`, the original widget might have been disposed.
+    // The `mounted` property checks if the State object is still in the widget tree.
     if (mounted) {
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(
+      navigator.pushNamedAndRemoveUntil(
         '/splash',
-        (
-          Route<
-            dynamic
-          >
-          route,
-        ) => false,
+        (Route<dynamic> route) => false,
       );
     }
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
+    final userRole = Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).user?.role;
+    final isDoctor = userRole == 'DOCTOR';
+
     return Drawer(
       child: Column(
         children: [
-          // The main content of the drawer
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildDrawerHeader(
-                  context,
-                ),
+                _buildDrawerHeader(context),
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.home_outlined,
                   text: 'Home',
-                  routeName: '/dashboard',
+                  routeName: '/',
                 ),
                 _buildDrawerItem(
                   context: context,
@@ -117,51 +90,47 @@ class _AppDrawerState
                   text: 'Profile',
                   routeName: '/profile',
                 ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.calendar_today_outlined,
-                  text: 'Appointments',
-                  routeName: '/appointments',
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
+                if (!isDoctor) ...[
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.calendar_today_outlined,
+                    text: 'Appointments',
+                    routeName: '/appointments',
                   ),
-                  child: Divider(),
-                ),
-                _buildDrawerSectionTitle(
-                  "Health Records",
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.receipt_long_outlined,
-                  text: 'Prescriptions',
-                  routeName: '/prescriptions',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.science_outlined,
-                  text: 'Lab Results',
-                  routeName: '/lab-results',
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.payment_outlined,
-                  text: 'Billing & Payments',
-                  routeName: '/billing',
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(),
                   ),
-                  child: Divider(),
-                ),
-                _buildDrawerItem(
-                  context: context,
-                  icon: Icons.person_search_outlined,
-                  text: 'Find a Doctor',
-                  routeName: '/find_a_doctor',
-                ),
+                  _buildDrawerSectionTitle("Health Records"),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.receipt_long_outlined,
+                    text: 'Prescriptions',
+                    routeName: '/prescriptions',
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.science_outlined,
+                    text: 'Lab Results',
+                    routeName: '/lab-results',
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.payment_outlined,
+                    text: 'Billing & Payments',
+                    routeName: '/billing',
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(),
+                  ),
+                  _buildDrawerItem(
+                    context: context,
+                    icon: Icons.person_search_outlined,
+                    text: 'Find a Doctor',
+                    routeName: '/find_a_doctor',
+                  ),
+                ],
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.settings_outlined,
@@ -171,22 +140,13 @@ class _AppDrawerState
               ],
             ),
           ),
-          // This container holds the logout button and app version at the bottom
           Container(
-            padding: const EdgeInsets.fromLTRB(
-              16.0,
-              0,
-              16.0,
-              24.0,
-            ),
+            padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 24.0),
             child: Column(
               children: [
                 const Divider(),
                 ListTile(
-                  leading: const Icon(
-                    Icons.logout,
-                    color: Colors.redAccent,
-                  ),
+                  leading: const Icon(Icons.logout, color: Colors.redAccent),
                   title: Text(
                     'Logout',
                     style: GoogleFonts.lato(
@@ -195,13 +155,9 @@ class _AppDrawerState
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  onTap: () => _logout(
-                    context,
-                  ),
+                  onTap: () => _logout(context),
                 ),
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 16),
                 Text(
                   'Version $_appVersion',
                   style: GoogleFonts.lato(
@@ -217,49 +173,23 @@ class _AppDrawerState
     );
   }
 
-  Widget _buildDrawerHeader(
-    BuildContext context,
-  ) {
-    final user =
-        Provider.of<
-              UserProvider
-            >(
-              context,
-              listen: false,
-            )
-            .user;
+  // ... (rest of the _buildDrawerHeader, _buildDrawerSectionTitle, _buildDrawerItem methods are unchanged)
+  Widget _buildDrawerHeader(BuildContext context) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
     final imageProvider =
-        (user?.profilePicture !=
-                null &&
-            user!.profilePicture!.isNotEmpty)
-        ? NetworkImage(
-            user.profilePicture!,
-          )
-        : const AssetImage(
-                'assets/images/default_avatar.png',
-              )
-              as ImageProvider;
+        (user?.profilePicture != null && user!.profilePicture!.isNotEmpty)
+        ? NetworkImage(user.profilePicture!)
+        : const AssetImage('assets/images/default_avatar.png') as ImageProvider;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        20,
-        60,
-        20,
-        30,
-      ),
+      padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(
-              context,
-            ).primaryColor,
-            Theme.of(
-              context,
-            ).primaryColor.withOpacity(
-              0.8,
-            ),
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
           ],
         ),
       ),
@@ -270,34 +200,22 @@ class _AppDrawerState
             radius: 40,
             backgroundColor: Colors.white,
             backgroundImage: imageProvider,
-            onBackgroundImageError:
-                (
-                  _,
-                  __,
-                ) {},
+            onBackgroundImageError: (_, __) {},
           ),
-          const SizedBox(
-            height: 16,
-          ),
+          const SizedBox(height: 16),
           Text(
-            user?.fullName ??
-                "Guest User",
+            user?.fullName ?? "Guest User",
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w700,
               fontSize: 20,
               color: Colors.white,
             ),
           ),
-          const SizedBox(
-            height: 4,
-          ),
+          const SizedBox(height: 4),
           Text(
-            user?.email ??
-                "no-email@example.com",
+            user?.email ?? "no-email@example.com",
             style: GoogleFonts.lato(
-              color: Colors.white.withOpacity(
-                0.9,
-              ),
+              color: Colors.white.withOpacity(0.9),
               fontSize: 14,
             ),
           ),
@@ -306,16 +224,9 @@ class _AppDrawerState
     );
   }
 
-  Widget _buildDrawerSectionTitle(
-    String title,
-  ) {
+  Widget _buildDrawerSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        16.0,
-        16.0,
-        16.0,
-        8.0,
-      ),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
       child: Text(
         title.toUpperCase(),
         style: GoogleFonts.lato(
@@ -334,45 +245,24 @@ class _AppDrawerState
     required String text,
     required String routeName,
   }) {
-    final currentRoute = ModalRoute.of(
-      context,
-    )?.settings.name;
-    final isSelected =
-        currentRoute ==
-        routeName;
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    final isSelected = currentRoute == routeName;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8.0,
-        vertical: 4.0,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       child: Material(
         color: isSelected
-            ? Theme.of(
-                context,
-              ).primaryColor.withOpacity(
-                0.1,
-              )
+            ? Theme.of(context).primaryColor.withOpacity(0.1)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(
-          10,
-        ),
+        borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: () {
-            Navigator.of(
-              context,
-            ).pop();
+            Navigator.of(context).pop(); // Close the drawer
             if (!isSelected) {
-              Navigator.of(
-                context,
-              ).pushReplacementNamed(
-                routeName,
-              );
+              Navigator.of(context).pushReplacementNamed(routeName);
             }
           },
-          borderRadius: BorderRadius.circular(
-            10,
-          ),
+          borderRadius: BorderRadius.circular(10),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 16.0,
@@ -383,16 +273,10 @@ class _AppDrawerState
                 Icon(
                   icon,
                   color: isSelected
-                      ? Theme.of(
-                          context,
-                        ).primaryColor
-                      : Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.color,
+                      ? Theme.of(context).primaryColor
+                      : Theme.of(context).textTheme.bodyLarge?.color,
                 ),
-                const SizedBox(
-                  width: 24,
-                ),
+                const SizedBox(width: 24),
                 Text(
                   text,
                   style: GoogleFonts.lato(
@@ -401,12 +285,8 @@ class _AppDrawerState
                         ? FontWeight.bold
                         : FontWeight.normal,
                     color: isSelected
-                        ? Theme.of(
-                            context,
-                          ).primaryColor
-                        : Theme.of(
-                            context,
-                          ).textTheme.bodyLarge?.color,
+                        ? Theme.of(context).primaryColor
+                        : Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ],

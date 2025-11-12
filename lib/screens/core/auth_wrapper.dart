@@ -7,41 +7,51 @@ import 'doctor_dashboard_screen.dart';
 import 'home_dashboard_screen.dart';
 import '../auth/login_screen.dart';
 
-class AuthWrapper
-    extends
-        StatelessWidget {
-  const AuthWrapper({
-    super.key,
-  });
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
-    // Listen to the UserProvider to get the current user's state
-    final user =
-        Provider.of<
-              UserProvider
-            >(
-              context,
-            )
-            .user;
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
 
-    // This is a safety check. If for some reason we get to this screen
-    // without a logged-in user, we send them back to the login page.
-    if (user ==
-        null) {
-      return const LoginScreen();
-    }
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<UserProvider>(context, listen: false).fetchAndSetUser();
+    });
+  }
 
-    // This is the core logic:
-    // Check the user's role and return the appropriate dashboard.
-    if (user.role ==
-        'DOCTOR') {
-      return const DoctorDashboardScreen();
-    } else {
-      // For 'CLIENT' or any other role, show the default home dashboard.
-      return const HomeDashboardScreen();
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
+        if (userProvider.isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final user = userProvider.user;
+
+        if (user != null) {
+          // --- ADDED FOR DEBUGGING ---
+          // Check your debug console for this message when you log in.
+          // It will tell you exactly what role the AuthWrapper is seeing.
+          debugPrint("AuthWrapper: User is present. Role: ${user.role}");
+
+          if (user.role == 'DOCTOR') {
+            return const DoctorDashboardScreen();
+          } else {
+            return const HomeDashboardScreen();
+          }
+        }
+
+        // If user is null after loading is finished, they are logged out.
+        debugPrint("AuthWrapper: No user found. Directing to LoginScreen.");
+        return const LoginScreen();
+      },
+    );
   }
 }

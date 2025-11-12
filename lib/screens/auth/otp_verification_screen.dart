@@ -9,14 +9,10 @@ import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';
 import '../../services/secure_storage_service.dart';
 
-enum VerificationType {
-  registration,
-  login,
-}
+// Enum to differentiate between using the screen for registration or login.
+enum VerificationType { registration, login }
 
-class OtpVerificationScreen
-    extends
-        StatefulWidget {
+class OtpVerificationScreen extends StatefulWidget {
   final String email;
   final VerificationType verificationType;
 
@@ -27,41 +23,17 @@ class OtpVerificationScreen
   });
 
   @override
-  State<
-    OtpVerificationScreen
-  >
-  createState() => _OtpVerificationScreenState();
+  State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
 }
 
-class _OtpVerificationScreenState
-    extends
-        State<
-          OtpVerificationScreen
-        >
-    with
-        SingleTickerProviderStateMixin {
-  final _formKey =
-      GlobalKey<
-        FormState
-      >();
-  final List<
-    TextEditingController
-  >
-  _otpControllers = List.generate(
+class _OtpVerificationScreenState extends State<OtpVerificationScreen>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  final List<TextEditingController> _otpControllers = List.generate(
     6,
-    (
-      _,
-    ) => TextEditingController(),
+    (_) => TextEditingController(),
   );
-  final List<
-    FocusNode
-  >
-  _focusNodes = List.generate(
-    6,
-    (
-      _,
-    ) => FocusNode(),
-  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool _isVerifying = false;
   bool _isResending = false;
@@ -69,142 +41,58 @@ class _OtpVerificationScreenState
   final ApiService _apiService = ApiService();
   final SecureStorageService _storageService = SecureStorageService();
 
+  // Animation controllers
   late AnimationController _controller;
-  late Animation<
-    double
-  >
-  _fadeAnimation;
-  late Animation<
-    Offset
-  >
-  _slideAnimationHeader;
-  late Animation<
-    Offset
-  >
-  _slideAnimationForm;
-  late Animation<
-    Offset
-  >
-  _slideAnimationButton;
-  late Animation<
-    Offset
-  >
-  _slideAnimationFooter;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimationHeader;
+  late Animation<Offset> _slideAnimationForm;
+  late Animation<Offset> _slideAnimationButton;
+  late Animation<Offset> _slideAnimationFooter;
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(
-        milliseconds: 1500,
-      ),
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    );
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _slideAnimationHeader =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                0,
-                0.8,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _controller,
-                curve: const Interval(
-                  0.0,
-                  0.6,
-                  curve: Curves.easeInOutCubic,
-                ),
-              ),
-            );
+        Tween<Offset>(begin: const Offset(0, 0.8), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.0, 0.6, curve: Curves.easeInOutCubic),
+          ),
+        );
     _slideAnimationForm =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                0,
-                0.8,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _controller,
-                curve: const Interval(
-                  0.2,
-                  0.7,
-                  curve: Curves.easeInOutCubic,
-                ),
-              ),
-            );
+        Tween<Offset>(begin: const Offset(0, 0.8), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.2, 0.7, curve: Curves.easeInOutCubic),
+          ),
+        );
     _slideAnimationButton =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                0,
-                0.8,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _controller,
-                curve: const Interval(
-                  0.3,
-                  0.8,
-                  curve: Curves.easeInOutCubic,
-                ),
-              ),
-            );
+        Tween<Offset>(begin: const Offset(0, 0.8), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.3, 0.8, curve: Curves.easeInOutCubic),
+          ),
+        );
     _slideAnimationFooter =
-        Tween<
-              Offset
-            >(
-              begin: const Offset(
-                0,
-                0.8,
-              ),
-              end: Offset.zero,
-            )
-            .animate(
-              CurvedAnimation(
-                parent: _controller,
-                curve: const Interval(
-                  0.4,
-                  0.9,
-                  curve: Curves.easeInOutCubic,
-                ),
-              ),
-            );
+        Tween<Offset>(begin: const Offset(0, 0.8), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.4, 0.9, curve: Curves.easeInOutCubic),
+          ),
+        );
 
-    for (
-      int i = 0;
-      i <
-          5;
-      i++
-    ) {
-      _otpControllers[i].addListener(
-        () {
-          if (_otpControllers[i].text.length ==
-                  1 &&
-              i <
-                  5) {
-            FocusScope.of(
-              context,
-            ).requestFocus(
-              _focusNodes[i +
-                  1],
-            );
-          }
-        },
-      );
+    // Logic to auto-focus the next OTP field
+    for (int i = 0; i < 5; i++) {
+      _otpControllers[i].addListener(() {
+        if (_otpControllers[i].text.length == 1 && i < 5) {
+          FocusScope.of(context).requestFocus(_focusNodes[i + 1]);
+        }
+      });
     }
     _controller.forward();
   }
@@ -221,195 +109,118 @@ class _OtpVerificationScreenState
     super.dispose();
   }
 
-  // --- MODIFIED METHOD: Now handles role-based navigation ---
-  Future<
-    void
-  >
-  _verifyOtp() async {
-    final isFormValid = _otpControllers.every(
-      (
-        c,
-      ) => c.text.isNotEmpty,
-    );
+  /// Handles the submission and verification of the entered OTP.
+  Future<void> _verifyOtp() async {
+    final isFormValid = _otpControllers.every((c) => c.text.isNotEmpty);
     if (!isFormValid) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please fill all OTP fields.',
-          ),
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all OTP fields.')),
       );
       return;
     }
 
-    setState(
-      () => _isVerifying = true,
-    );
-    final otp = _otpControllers
-        .map(
-          (
-            c,
-          ) => c.text,
-        )
-        .join();
+    setState(() => _isVerifying = true);
+    final otp = _otpControllers.map((c) => c.text).join();
 
     try {
-      if (widget.verificationType ==
-          VerificationType.login) {
+      if (widget.verificationType == VerificationType.login) {
+        // Step 1: Verify OTP and get tokens
         final response = await _apiService.verifyLoginOtp(
           email: widget.email,
           otp: otp,
         );
         final accessToken = response.data['access'];
         final refreshToken = response.data['refresh'];
-        final String role = response.data['role']; // Get role from API response
 
+        // Step 2: Securely store the tokens
         await _storageService.saveTokens(
           accessToken: accessToken,
           refreshToken: refreshToken,
         );
 
+        // Step 3: Fetch the user's profile to populate the UserProvider
         if (mounted) {
-          await Provider.of<
-                UserProvider
-              >(
-                context,
-                listen: false,
-              )
-              .fetchAndSetUser();
+          await Provider.of<UserProvider>(
+            context,
+            listen: false,
+          ).fetchAndSetUser();
         }
 
-        // --- NEW: Role-based navigation logic ---
+        // Step 4: Navigate to the main app wrapper
         if (mounted) {
-          final targetRoute =
-              (role ==
-                  'DOCTOR')
-              ? '/doctor-dashboard'
-              : '/dashboard';
-
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil(
-            targetRoute,
-            (
-              route,
-            ) => false,
+          // --- DEBUGGING STATEMENT ---
+          // This confirms that the OTP screen has done its job and is now
+          // handing control over to the AuthWrapper.
+          debugPrint(
+            "OtpVerificationScreen: Successfully fetched user. Navigating to AuthWrapper ('/').",
           );
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
         }
       } else {
-        // Registration flow remains the same
-        await _apiService.verifyRegistrationOtp(
-          email: widget.email,
-          otp: otp,
-        );
+        // Handle registration flow
+        await _apiService.verifyRegistrationOtp(email: widget.email, otp: otp);
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Account activated successfully! Please log in.',
-              ),
+              content: Text('Account activated successfully! Please log in.'),
               backgroundColor: Colors.green,
             ),
           );
           Navigator.of(
             context,
-          ).pushNamedAndRemoveUntil(
-            '/login',
-            (
-              route,
-            ) => false,
-          );
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       }
-    } on DioException catch (
-      e
-    ) {
+    } on DioException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              ApiService.getErrorMessage(
-                e,
-              ),
-            ),
+            content: Text(ApiService.getErrorMessage(e)),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(
-          () => _isVerifying = false,
-        );
+        setState(() => _isVerifying = false);
       }
     }
   }
 
-  Future<
-    void
-  >
-  _resendOtp() async {
-    setState(
-      () => _isResending = true,
-    );
+  /// Handles the request to resend an OTP.
+  Future<void> _resendOtp() async {
+    setState(() => _isResending = true);
     try {
-      if (widget.verificationType ==
-          VerificationType.login) {
-        await _apiService.resendLoginOtp(
-          email: widget.email,
-        );
+      if (widget.verificationType == VerificationType.login) {
+        await _apiService.resendLoginOtp(email: widget.email);
       } else {
-        await _apiService.resendRegistrationOtp(
-          email: widget.email,
-        );
+        await _apiService.resendRegistrationOtp(email: widget.email);
       }
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'A new code has been sent to ${widget.email}',
-            ),
+            content: Text('A new code has been sent to ${widget.email}'),
           ),
         );
       }
-    } on DioException catch (
-      e
-    ) {
+    } on DioException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              ApiService.getErrorMessage(
-                e,
-              ),
-            ),
+            content: Text(ApiService.getErrorMessage(e)),
             backgroundColor: Colors.redAccent,
           ),
         );
       }
     } finally {
       if (mounted) {
-        setState(
-          () => _isResending = false,
-        );
+        setState(() => _isResending = false);
       }
     }
   }
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         systemOverlayStyle: const SystemUiOverlayStyle(
@@ -420,25 +231,17 @@ class _OtpVerificationScreenState
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black54,
-          ),
-          onPressed: () => Navigator.of(
-            context,
-          ).pop(),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black54),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       resizeToAvoidBottomInset: false,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 24.0,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           children: [
-            const SizedBox(
-              height: 40,
-            ),
+            const SizedBox(height: 40),
+            // Header animation
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -453,9 +256,7 @@ class _OtpVerificationScreenState
                         color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(
-                      height: 16,
-                    ),
+                    const SizedBox(height: 16),
                     Text(
                       'Please enter the 6-digit code sent to your email at:\n${widget.email}',
                       textAlign: TextAlign.center,
@@ -469,9 +270,8 @@ class _OtpVerificationScreenState
                 ),
               ),
             ),
-            const SizedBox(
-              height: 60,
-            ),
+            const SizedBox(height: 60),
+            // OTP form animation
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -482,9 +282,7 @@ class _OtpVerificationScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(
                       6,
-                      (
-                        index,
-                      ) => SizedBox(
+                      (index) => SizedBox(
                         width: 50,
                         height: 60,
                         child: TextFormField(
@@ -499,30 +297,20 @@ class _OtpVerificationScreenState
                           style: GoogleFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(
-                              context,
-                            ).primaryColor,
+                            color: Theme.of(context).primaryColor,
                           ),
                           decoration: InputDecoration(
                             counterText: '',
                             filled: true,
-                            fillColor: Colors.grey.withOpacity(
-                              0.1,
-                            ),
+                            fillColor: Colors.grey.withOpacity(0.1),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                12,
-                              ),
+                              borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                12,
-                              ),
+                              borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide(
-                                color: Theme.of(
-                                  context,
-                                ).primaryColor,
+                                color: Theme.of(context).primaryColor,
                                 width: 2,
                               ),
                             ),
@@ -534,9 +322,8 @@ class _OtpVerificationScreenState
                 ),
               ),
             ),
-            const SizedBox(
-              height: 40,
-            ),
+            const SizedBox(height: 40),
+            // Button animation
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -544,21 +331,13 @@ class _OtpVerificationScreenState
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isVerifying
-                        ? null
-                        : _verifyOtp,
+                    onPressed: _isVerifying ? null : _verifyOtp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF6A49E2,
-                      ),
+                      backgroundColor: const Color(0xFF6A49E2),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 18,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          12,
-                        ),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 5,
                     ),
@@ -582,9 +361,8 @@ class _OtpVerificationScreenState
                 ),
               ),
             ),
-            const SizedBox(
-              height: 24,
-            ),
+            const SizedBox(height: 24),
+            // Footer animation
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -594,21 +372,15 @@ class _OtpVerificationScreenState
                   children: [
                     Text(
                       "Didn't receive the code?",
-                      style: GoogleFonts.lato(
-                        color: Colors.grey[600],
-                      ),
+                      style: GoogleFonts.lato(color: Colors.grey[600]),
                     ),
                     _isResending
                         ? const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.0,
-                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 12.0),
                             child: SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 3),
                             ),
                           )
                         : TextButton(
@@ -617,9 +389,7 @@ class _OtpVerificationScreenState
                               'Resend',
                               style: GoogleFonts.lato(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(
-                                  context,
-                                ).primaryColor,
+                                color: Theme.of(context).primaryColor,
                               ),
                             ),
                           ),
